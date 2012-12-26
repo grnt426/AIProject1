@@ -4,7 +4,7 @@ def solve_hitori(puzzle, intelligent):
 	print_puzzle(puzzle)
 
 	if(intelligent == 0):
-		brute_solver(puzzle)
+		brute_solver(puzzle, 0)
 	else:
 		smart_solver(puzzle)
 
@@ -13,6 +13,10 @@ def is_valid(state):
 	for row in range(0, len(state)):
 		for col in range(0, len(state)):
 			pass
+	return False
+
+def is_solved(state):
+	return False
 
 def is_black(puzzle, row, col):
 	return puzzle[row][col].index(0, 1) == "B"
@@ -37,20 +41,46 @@ def get_num(puzzle, row, col):
 
 
 def find_all_valid(cur_state):
-	valid_states = []
+	valid_states = [cur_state]
 	state = cur_state
 	if is_valid(state):
 		valid_states.append(state)
+	return valid_states
 
 
-def brute_solver(puzzle):
-	queue = []
-	num_states = 0
-	while len(queue) != 0:
-		cur_state = queue.pop()
-		new_states = find_all_valid(cur_state)
-		num_states += len(new_states)
-		queue.append(new_states)
+"""
+	brute_solver
+
+	Attempts to solve the given Hitori puzzle using the DFS algorithm.
+	DFS was chosen for its low memory requirements.  Since Hitori only has a
+	single valid solution for each puzzle, BFS isn't necessary to optimize for
+	the fewest tiles to turn black. DFS was also chosen for its simple
+	implementation.
+
+	puzzle		The puzzle to solve
+"""
+
+def not_seen(state):
+	return True
+
+
+def print_states_gen(total_states):
+	print("Total States Generated: " + str(total_states))
+
+
+def brute_solver(puzzle, total_states):
+
+	# termination case
+	if is_solved(puzzle):
+		print_states_gen(total_states)
+		print_puzzle(puzzle)
+		return
+
+	new_states = find_all_valid(puzzle)
+	n_total_states = len(new_states) + total_states
+	for state in new_states:
+		if not_seen(state):
+			brute_solver(state, n_total_states)
 
 def smart_solver(puzzle):
 	print("Finding Solution...")

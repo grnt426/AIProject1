@@ -1,14 +1,48 @@
-def solve_hitori(puzzle, intelligent):
+__author__ = "Grant Kurtz"
+
+"""
+	Rules of Hitori
+	Rule One: When Solved, the same number does not appear twice (unblackened)
+				in any single row or column.
+	Rule Two: No two black squares are horizontally or vertically adjacent
+				(diagonal is OK).
+	Rule Three: All of the white squares form a single
+				(horizontally and/or vertically) connected group.
+
+	Puzzle Format
+		* All puzzles are given as an N * N grid.
+		* Each tile is a single string.
+		* Each tile will be of the format [M]V, where M is an optional mark
+		to indicate the tile is either White (W) or Black (B). V is the
+		value of the tile (in the range of 1-n).
+			* Example:
+				B2	W1
+				1	1
+"""
+
+"""
+	solve_hitori
+
+	Given a Hitori puzzle, will attempt to find a solution for that puzzle.
+
+	puzzle		The puzzle to solve
+	smart		If 0, then a brute force solver will be used to solve the
+				puzzle, otherwise an intelligent solver will be used.
+"""
+def solve_hitori(puzzle, smart):
 
 	# show the start state we are given
 	print_puzzle(puzzle)
 
-	if(intelligent == 0):
+	if(smart == 0):
 		brute_solver(puzzle, 0)
 	else:
 		smart_solver(puzzle)
 
-
+"""
+	return		True if the puzzle state conforms to rules Two and Three of
+				a Hitori puzzle (as defined above).
+"""
 def is_valid(state):
 	for row in range(0, len(state)):
 		for col in range(0, len(state)):
@@ -22,7 +56,7 @@ def is_black(puzzle, row, col):
 	return puzzle[row][col].index(0, 1) == "B"
 
 def is_white(puzzle, row, col):
-	return puzzle[row][col].index(0, 1) == "W"
+	return puzzle[row][col].index(0, 1) == "W" or puzzle[row][col].isnumeric()
 
 def mark_black(puzzle, row, col):
 	puzzle[row][col] = "B" + puzzle[row][col]
@@ -41,11 +75,20 @@ def get_num(puzzle, row, col):
 
 
 def find_all_valid(cur_state):
-	valid_states = [cur_state]
-	state = cur_state
-	if is_valid(state):
-		valid_states.append(state)
+	valid_states = []
+	for row in cur_state:
+		for col in row:
+			state = cur_state.deepcopy()
+			if is_valid(state):
+				valid_states.append(state)
 	return valid_states
+
+def not_seen(state):
+	return True
+
+
+def print_states_gen(total_states):
+	print("Total States Generated: " + str(total_states))
 
 
 """
@@ -59,15 +102,6 @@ def find_all_valid(cur_state):
 
 	puzzle		The puzzle to solve
 """
-
-def not_seen(state):
-	return True
-
-
-def print_states_gen(total_states):
-	print("Total States Generated: " + str(total_states))
-
-
 def brute_solver(puzzle, total_states):
 
 	# termination case
@@ -88,7 +122,7 @@ def smart_solver(puzzle):
 def print_puzzle(puzzle):
 	for row in puzzle:
 		for col in row:
-			print(str(col), end=" ")
+			print(col, end=" ")
 		print()
 
 # Puzzles

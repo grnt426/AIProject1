@@ -1,5 +1,7 @@
 __author__ = "Grant Kurtz"
 
+import copy
+
 """
 	Rules of Hitori
 	Rule One: When Solved, the same number does not appear twice (unblackened)
@@ -20,6 +22,67 @@ __author__ = "Grant Kurtz"
 				1	1
 """
 
+class Puzzle:
+
+	puzzle = []
+	rows = 0
+
+	def __init__(self, puzzle):
+		self.puzzle = puzzle
+		self.rows = len(puzzle)
+
+	def getRows(self):
+		return self.rows
+
+	"""
+		return		True if the puzzle state conforms to rules Two and Three of
+					a Hitori puzzle (as defined above).
+	"""
+	def isValid(self):
+
+		# First, check rule Two
+		for row in range(0, self.rows):
+			for col in range(0, self.rows):
+				if self.isBlack(row, col):
+					if row + 1 < self.rows and self.isBlack(row + 1, col):
+						return False
+					if col + 1 < self.rows and self.isBlack(row, col + 1):
+						return False
+
+		# Check rule Three
+
+
+		return True
+
+	def isSolved(self):
+		return False
+
+	def isBlack(self, row, col):
+		return self.puzzle[row][col][0:1] == "B"
+
+	def isWhite(self, row, col):
+		return self.puzzle[row][col][0:1] == "W" \
+		or self.puzzle[row][col].isnumeric()
+
+	def markBlack(self, row, col):
+		self.puzzle[row][col] = "B" + self.puzzle[row][col]
+
+	def markWhite(self, row, col):
+		self.puzzle[row][col] = "W" + self.puzzle[row][col]
+
+	def getNum(self, row, col):
+		tile = self.puzzle[row][col]
+		if tile.isnumeric():
+			return tile
+		else:
+			return self.puzzle[row][col][1:2]
+
+	def getPuzzle(self):
+		return self.puzzle
+
+	def getCopy(self):
+		return copy.deepcopy(self.puzzle)
+
 """
 	solve_hitori
 
@@ -39,60 +102,15 @@ def solve_hitori(puzzle, smart):
 	else:
 		smart_solver(puzzle)
 
-"""
-	return		True if the puzzle state conforms to rules Two and Three of
-				a Hitori puzzle (as defined above).
-"""
-def is_valid(state):
-
-	# First, check rule Two
-	for row in range(0, len(state)):
-		for col in range(0, len(state)):
-			if is_black(state, row, col):
-				if row + 1 < len(state) and is_black(state, row + 1, col):
-					return False
-				if col + 1 < len(state) and is_black(state, row, col + 1):
-					return False
-
-	# Check rule Three
-
-
-	return True
-
-def is_solved(state):
-	return False
-
-def is_black(puzzle, row, col):
-	return puzzle[row][col].index(0, 1) == "B"
-
-def is_white(puzzle, row, col):
-	return puzzle[row][col].index(0, 1) == "W" or puzzle[row][col].isnumeric()
-
-def mark_black(puzzle, row, col):
-	puzzle[row][col] = "B" + puzzle[row][col]
-	return puzzle
-
-def mark_white(puzzle, row, col):
-	puzzle[row][col] = "W" + puzzle[row][col]
-	return puzzle
-
-def get_num(puzzle, row, col):
-	tile = puzzle[row][col]
-	if tile.isnumeric():
-		return tile
-	else:
-		return puzzle[row][col].index(1)
-
-
 def find_all_valid(cur_state):
 	valid_states = []
-	for row in range(0, len(cur_state)):
-		for col in range(0, len(cur_state)):
-			if is_black(cur_state, row, col):
+	for row in range(0, cur_state.getRows()):
+		for col in range(0, cur_state.getRows()):
+			if cur_state.isBlack(row, col):
 				continue
-			state = cur_state.deepcopy()
-			mark_black(state, row, col)
-			if is_valid(state):
+			state = Puzzle(cur_state.getCopy())
+			state.markBlack(row, col)
+			if state.isValid():
 				valid_states.append(state)
 	return valid_states
 
@@ -118,7 +136,7 @@ def print_states_gen(total_states):
 def brute_solver(puzzle, total_states):
 
 	# termination case
-	if is_solved(puzzle):
+	if puzzle.isSolved():
 		print_states_gen(total_states)
 		print_puzzle(puzzle)
 		return
@@ -133,19 +151,21 @@ def smart_solver(puzzle):
 	print("Finding Solution...")
 
 def print_puzzle(puzzle):
-	for row in puzzle:
+	board = puzzle.getPuzzle()
+	for row in board:
 		for col in row:
 			print(col, end=" ")
 		print()
 
 # Puzzles
-puzzle1 = [
+puzzle1 = Puzzle([
 	["2", "1"],
 	["1", "1"]
-]
+])
 
 # Brute-Force Solver
 solve_hitori(puzzle1, 0)
 
 # Smart solver
 # solve_hitori(puzzle1, 1)
+

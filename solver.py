@@ -34,7 +34,7 @@ def solve_hitori(puzzle, smart):
 	# show the start state we are given
 	print_puzzle(puzzle)
 
-	if(smart == 0):
+	if smart == 0:
 		brute_solver(puzzle, 0)
 	else:
 		smart_solver(puzzle)
@@ -44,10 +44,20 @@ def solve_hitori(puzzle, smart):
 				a Hitori puzzle (as defined above).
 """
 def is_valid(state):
+
+	# First, check rule Two
 	for row in range(0, len(state)):
 		for col in range(0, len(state)):
-			pass
-	return False
+			if is_black(state, row, col):
+				if row + 1 < len(state) and is_black(state, row + 1, col):
+					return False
+				if col + 1 < len(state) and is_black(state, row, col + 1):
+					return False
+
+	# Check rule Three
+
+
+	return True
 
 def is_solved(state):
 	return False
@@ -76,9 +86,12 @@ def get_num(puzzle, row, col):
 
 def find_all_valid(cur_state):
 	valid_states = []
-	for row in cur_state:
-		for col in row:
+	for row in range(0, len(cur_state)):
+		for col in range(0, len(cur_state)):
+			if is_black(cur_state, row, col):
+				continue
 			state = cur_state.deepcopy()
+			mark_black(state, row, col)
 			if is_valid(state):
 				valid_states.append(state)
 	return valid_states

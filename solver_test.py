@@ -50,6 +50,12 @@ def test_conformsToRuleThreeIsolatedWhiteTile():
 				 ["1", "B1", "2"],
 				 ["B3", "2", "B1"]], True)
 	assert(not p.conformsToRuleThree())
+def test_conformsToRuleOneNoneMarked():
+	p = Puzzle( [["2", "1"], ["1", "1"]], False)
+	assert(not p.conformsToRuleOne())
+def test_conformsToRuleOneMultipleMarked():
+	p = Puzzle( [["2", "B1"], ["B1", "1"]], False)
+	assert(p.conformsToRuleOne())
 
 
 # Execute Tests

@@ -50,6 +50,19 @@ class Puzzle:
 		return self.conformsToRuleTwo() and self.conformsToRuleThree()
 
 	def conformsToRuleOne(self):
+		colData = {}
+		for row in range(0, self.rows):
+			rowData = []
+			for col in range(0, self.rows):
+				num = self.getNum(row, col)
+				if self.isWhite(row, col):
+					if num in rowData or (col in colData and num in colData[col]):
+						return False
+					rowData.append(num)
+					if col not in colData:
+						colData[col] = []
+					colData[col].append(num)
+
 		return True
 
 	def conformsToRuleTwo(self):

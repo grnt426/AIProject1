@@ -25,21 +25,32 @@ import copy
 class Puzzle:
 	puzzle = []
 	rows = 0
+	_markedBlack = 0
 
-	def __init__(self, puzzle):
+	"""
+		puzzle	The array to use to define this Puzzle.
+		marked	Whether elements in the array were pre-marked before passing
+				to this class.
+	"""
+	def __init__(self, puzzle, marked):
 		self.puzzle = puzzle
 		self.rows = len(puzzle)
+		if marked:
+			self.countMarked()
 
 	def getRows(self):
 		return self.rows
 
 	"""
-		return		True if the puzzle state conforms to rules Two and Three of
+		return		True if the puzzle state conforms to Rules Two and Three of
 					a Hitori puzzle (as defined above).
 	"""
 
 	def isValid(self):
 		return self.conformsToRuleTwo() and self.conformsToRuleThree()
+
+	def conformsToRuleOne(self):
+		return True
 
 	def conformsToRuleTwo(self):
 		for row in range(0, self.rows):
@@ -52,10 +63,49 @@ class Puzzle:
 		return True
 
 	def conformsToRuleThree(self):
-		return True
+		totalWhite = self.rows * self.rows - self._markedBlack
+		totalVisited = 0
+		queue = []
+		seen = []
 
+		# The first or second element must be White (because otherwise this
+		# puzzle would fail Rule Two), and this puzzle must minimally be
+		# 2x2, so we are guaranteed to find a White tile
+		if self.isWhite(0, 0):
+			queue.append([0, 0])
+		elif self.isWhite(0, 1):
+			queue.append([0, 1])
+		else:
+			return False
+
+		while len(queue) > 0:
+			tile = queue.pop()
+			if tile in seen:
+				continue
+			else:
+				seen.append(tile)
+			totalVisited += 1
+			row = tile[0]
+			col = tile[1]
+			if row - 1 >= 0 and self.isWhite(row - 1, col):
+				queue.append([row - 1, col])
+			if row + 1 < self.rows and self.isWhite(row + 1, col):
+				queue.append([row + 1, col])
+			if col - 1 >= 0 and self.isWhite(row, col - 1):
+				queue.append([row, col - 1])
+			if col + 1 < self.rows and self.isWhite(row, col + 1):
+				queue.append([row, col + 1])
+
+		return totalVisited == totalWhite
+
+	"""
+		The ordering of the rules being checked is to "fail fast".  Rule Two
+		is most likely to fail for the Brute solver, so time can be saved
+		by having that check first instead of Rule One.
+	"""
 	def isSolved(self):
-		return False
+		return self.conformsToRuleTwo() and self.conformsToRuleOne() \
+		and self.conformsToRuleThree()
 
 	def isBlack(self, row, col):
 		return self.puzzle[row][col][0:1] == "B"
@@ -66,6 +116,7 @@ class Puzzle:
 
 	def markBlack(self, row, col):
 		self.puzzle[row][col] = "B" + self.puzzle[row][col]
+		self._markedBlack += 1
 
 	def markWhite(self, row, col):
 		self.puzzle[row][col] = "W" + self.puzzle[row][col]
@@ -82,6 +133,18 @@ class Puzzle:
 
 	def getCopy(self):
 		return copy.deepcopy(self.puzzle)
+
+	"""
+		Updates the markedBlack counter.  Useful for manually constructed
+		puzzles where the Black tiles were marked in the array instead of
+		through function calls.
+	"""
+	def countMarked(self):
+		self._markedBlack = 0
+		for row in range(0, self.rows):
+			for col in range(0, self.rows):
+				if self.isBlack(row, col):
+					self._markedBlack += 1
 
 """
 	solve_hitori
@@ -109,7 +172,7 @@ def find_all_valid(cur_state):
 		for col in range(0, cur_state.getRows()):
 			if cur_state.isBlack(row, col):
 				continue
-			state = Puzzle(cur_state.getCopy())
+			state = Puzzle(cur_state.getCopy(), True)
 			state.markBlack(row, col)
 			if state.isValid():
 				valid_states.append(state)
@@ -165,7 +228,7 @@ def print_puzzle(puzzle):
 puzzle1 = Puzzle([
 	["2", "1"],
 	["1", "1"]
-])
+], True)
 
 # Brute-Force Solver
 solve_hitori(puzzle1, 0)

@@ -8,8 +8,10 @@ Rules of Hitori
 ---------------
 Rule One: When solved, the same number does not appear twice (White)
 			in any single row or column.
+
 Rule Two: No two Black squares are horizontally or vertically adjacent
             (diagonal is OK).
+
 Rule Three: All of the White squares form a single
             (horizontally and/or vertically) connected group.
 

@@ -1,6 +1,7 @@
 __author__ = "Grant Kurtz"
 
 import copy
+from collections import deque
 
 """
 	Rules of Hitori
@@ -78,7 +79,7 @@ class Puzzle:
 	def conformsToRuleThree(self):
 		totalWhite = self.rows * self.rows - self._markedBlack
 		totalVisited = 0
-		queue = []
+		queue = deque()
 		seen = []
 
 		# The first or second element must be White (because otherwise this
@@ -92,7 +93,7 @@ class Puzzle:
 			return False
 
 		while len(queue) > 0:
-			tile = queue.pop()
+			tile = queue.popleft()
 			if tile in seen:
 				continue
 			else:
@@ -180,7 +181,9 @@ def solve_hitori(puzzle, smart):
 	print()
 
 	if smart == 0:
-		if not brute_solver(puzzle, 0):
+#		if not brute_solver(puzzle, 0):
+#			print("No Solution")
+		if not brute_solver2(puzzle):
 			print("No Solution")
 	else:
 		smart_solver(puzzle)
@@ -228,16 +231,16 @@ def print_states_gen(total_states):
 	return		True if the puzzle was solved, otherwise False
 """
 
-def brute_solver(puzzle, total_states):
+def brute_solver(puzzle, totalStates):
 	# termination case
 	if puzzle.isSolved():
 		print("Final Solution State")
 		print_puzzle(puzzle)
-		print_states_gen(total_states)
+		print_states_gen(totalStates)
 		return True
 
 	new_states = find_all_valid(puzzle)
-	n_total_states = len(new_states) + total_states
+	n_total_states = len(new_states) + totalStates
 	for state in new_states:
 		if notSeen(state):
 			markedSeen(state)
@@ -245,6 +248,33 @@ def brute_solver(puzzle, total_states):
 				return True
 	return False
 
+def brute_solver2(puzzle):
+	queue = deque([puzzle])
+	totalStates = 0
+
+	while len(queue) > 0:
+		state = queue.popleft()
+
+		# Only bother with new states
+		if notSeen(state):
+			markedSeen(state)
+		else:
+			continue
+
+		# Check if this is the winning state afterwards, since we are more
+		# likely to find a duplicate state (and therefore not need to do more)
+		# instead of finding the goal state
+		if state.isSolved():
+			print("Final Solution State")
+			print_puzzle(state)
+			print_states_gen(totalStates)
+			return True
+
+		# Otherwise we resume creating more states
+		new_states = find_all_valid(state)
+		queue += new_states
+		totalStates += len(new_states)
+	return False
 
 def smart_solver(puzzle):
 	print("Finding Solution...")

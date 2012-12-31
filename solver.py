@@ -171,7 +171,9 @@ class Puzzle:
 
 def solve_hitori(puzzle, smart):
 	# show the start state we are given
+	print("Start Puzzle State")
 	print_puzzle(puzzle)
+	print()
 
 	if smart == 0:
 		brute_solver(puzzle, 0)
@@ -215,8 +217,9 @@ def print_states_gen(total_states):
 def brute_solver(puzzle, total_states):
 	# termination case
 	if puzzle.isSolved():
-		print_states_gen(total_states)
+		print("Final Solution State")
 		print_puzzle(puzzle)
+		print_states_gen(total_states)
 		return
 
 	new_states = find_all_valid(puzzle)

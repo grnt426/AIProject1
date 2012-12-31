@@ -212,6 +212,7 @@ def print_states_gen(total_states):
 	implementation.
 
 	puzzle		The puzzle to solve
+	return		True if the puzzle was solved, otherwise False
 """
 
 def brute_solver(puzzle, total_states):
@@ -220,13 +221,15 @@ def brute_solver(puzzle, total_states):
 		print("Final Solution State")
 		print_puzzle(puzzle)
 		print_states_gen(total_states)
-		return
+		return True
 
 	new_states = find_all_valid(puzzle)
 	n_total_states = len(new_states) + total_states
 	for state in new_states:
 		if not_seen(state):
-			brute_solver(state, n_total_states)
+			if brute_solver(state, n_total_states):
+				return True
+	return False
 
 
 def smart_solver(puzzle):
@@ -244,10 +247,18 @@ def print_puzzle(puzzle):
 puzzle1 = Puzzle([
 	["2", "1"],
 	["1", "1"]
-], True)
+], False)
+
+puzzle2 = Puzzle([
+	["1", "2", "3"],
+	["1", "1", "3"],
+	["2", "3", "3"]
+], False)
 
 # Brute-Force Solver
 solve_hitori(puzzle1, 0)
+print()
+solve_hitori(puzzle2, 0)
 
 # Smart solver
 # solve_hitori(puzzle1, 1)

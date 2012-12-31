@@ -170,6 +170,10 @@ class Puzzle:
 """
 
 def solve_hitori(puzzle, smart):
+
+	# Make sure our Seen List is empty
+	clearSeen()
+
 	# show the start state we are given
 	print("Start Puzzle State")
 	print_puzzle(puzzle)
@@ -194,8 +198,14 @@ def find_all_valid(cur_state):
 	return valid_states
 
 
-def not_seen(state):
-	return True
+def notSeen(state):
+	return state.getPuzzle() not in seenList
+
+def markedSeen(state):
+	seenList.append(state.getPuzzle())
+
+def clearSeen():
+	seenList = []
 
 
 def print_states_gen(total_states):
@@ -226,7 +236,8 @@ def brute_solver(puzzle, total_states):
 	new_states = find_all_valid(puzzle)
 	n_total_states = len(new_states) + total_states
 	for state in new_states:
-		if not_seen(state):
+		if notSeen(state):
+			markedSeen(state)
 			if brute_solver(state, n_total_states):
 				return True
 	return False
@@ -254,6 +265,9 @@ puzzle2 = Puzzle([
 	["1", "1", "3"],
 	["2", "3", "3"]
 ], False)
+
+# Seen List
+seenList = []
 
 # Brute-Force Solver
 solve_hitori(puzzle1, 0)

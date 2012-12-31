@@ -1,6 +1,9 @@
 __author__ = 'grnt426'
 
 from solver import Puzzle
+from solver import clearSeen
+from solver import notSeen
+from solver import markedSeen
 
 def test_isBlack():
 	p = Puzzle( [["B2", "1"], ["1", "1"]], True)
@@ -56,7 +59,14 @@ def test_conformsToRuleOneNoneMarked():
 def test_conformsToRuleOneMultipleMarked():
 	p = Puzzle( [["2", "B1"], ["B1", "1"]], False)
 	assert(p.conformsToRuleOne())
-
+def test_SeenList():
+	p = Puzzle( [["2", "1"], ["1", "1"]], False)
+	p2 = Puzzle( [["2", "1"], ["1", "1"]], False)
+	clearSeen()
+	assert(notSeen(p))
+	markedSeen(p)
+	assert(not notSeen(p))
+	assert(not notSeen(p2))
 
 # Execute Tests
 test_isBlack()
@@ -74,3 +84,6 @@ test_conformsToRuleThreeEmpty()
 test_conformsToRuleThreeSingleMarked()
 test_conformsToRuleThreeDiagonallyDivided()
 test_conformsToRuleThreeIsolatedWhiteTile()
+test_conformsToRuleOneNoneMarked()
+test_conformsToRuleOneMultipleMarked()
+test_SeenList()

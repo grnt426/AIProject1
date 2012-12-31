@@ -180,7 +180,8 @@ def solve_hitori(puzzle, smart):
 	print()
 
 	if smart == 0:
-		brute_solver(puzzle, 0)
+		if not brute_solver(puzzle, 0):
+			print("No Solution")
 	else:
 		smart_solver(puzzle)
 
@@ -203,6 +204,8 @@ def notSeen(state):
 
 def markedSeen(state):
 	seenList.append(state.getPuzzle())
+	if len(seenList) % 1000 == 0:
+		print("Seen: " + str(len(seenList)))
 
 def clearSeen():
 	seenList = []
@@ -266,6 +269,20 @@ puzzle2 = Puzzle([
 	["2", "3", "3"]
 ], False)
 
+puzzle3 = Puzzle([
+	["1", "2", "3"],
+	["2", "2", "3"],
+	["1", "1", "3"]
+], False)
+
+puzzle4 = Puzzle([
+	["3", "2", "5", "4", "5"],
+	["2", "3", "4", "3", "5"],
+	["4", "3", "2", "4", "4"],
+	["1", "3", "3", "5", "5"],
+	["5", "4", "1", "2", "3"]
+], False)
+
 # Seen List
 seenList = []
 
@@ -273,6 +290,11 @@ seenList = []
 solve_hitori(puzzle1, 0)
 print()
 solve_hitori(puzzle2, 0)
+print()
+solve_hitori(puzzle3, 0)
+print()
+solve_hitori(puzzle4, 0)
+
 
 # Smart solver
 # solve_hitori(puzzle1, 1)

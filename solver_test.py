@@ -21,21 +21,21 @@ def test_getMarkedNum():
 def test_getUnmarkedNum():
 	p = Puzzle( [["B2", "1"], ["1", "1"]])
 	assert(int(p.getNum(0, 1)) == 1)
-def test_isValidUnmarked():
+def test_conformsToRuleTwoUnmarked():
 	p = Puzzle( [["2", "1"], ["1", "1"]])
-	assert(p.isValid())
-def test_isValidSingleMark():
+	assert(p.conformsToRuleTwo())
+def test_conformsToRuleTwoSingleMark():
 	p = Puzzle( [["B2", "1"], ["1", "1"]])
-	assert(p.isValid())
-def test_isValidNonAdjacentMarks():
+	assert(p.conformsToRuleTwo())
+def test_conformsToRuleTwoNonAdjacentMarks():
 	p = Puzzle( [["B2", "1"], ["1", "B1"]])
-	assert(p.isValid())
-def test_isValidVerticallyAdjacentMarks():
+	assert(p.conformsToRuleTwo())
+def test_conformsToRuleTwoVerticallyAdjacentMarks():
 	p = Puzzle( [["B2", "1"], ["B1", "1"]])
-	assert(not p.isValid())
-def test_isValidHorizontallyAdjacentMarks():
+	assert(not p.conformsToRuleTwo())
+def test_conformsToRuleTwoHorizontallyAdjacentMarks():
 	p = Puzzle( [["B2", "B1"], ["1", "1"]])
-	assert(not p.isValid())
+	assert(not p.conformsToRuleTwo())
 
 
 # Execute Tests
@@ -45,8 +45,8 @@ test_getRows()
 test_markBlack()
 test_getMarkedNum()
 test_getUnmarkedNum()
-test_isValidUnmarked()
-test_isValidSingleMark()
-test_isValidNonAdjacentMarks()
-test_isValidVerticallyAdjacentMarks()
-test_isValidHorizontallyAdjacentMarks()
+test_conformsToRuleTwoUnmarked()
+test_conformsToRuleTwoSingleMark()
+test_conformsToRuleTwoNonAdjacentMarks()
+test_conformsToRuleTwoVerticallyAdjacentMarks()
+test_conformsToRuleTwoHorizontallyAdjacentMarks()

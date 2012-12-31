@@ -23,7 +23,6 @@ import copy
 """
 
 class Puzzle:
-
 	puzzle = []
 	rows = 0
 
@@ -38,9 +37,11 @@ class Puzzle:
 		return		True if the puzzle state conforms to rules Two and Three of
 					a Hitori puzzle (as defined above).
 	"""
-	def isValid(self):
 
-		# First, check rule Two
+	def isValid(self):
+		return self.conformsToRuleTwo() and self.conformsToRuleThree()
+
+	def conformsToRuleTwo(self):
 		for row in range(0, self.rows):
 			for col in range(0, self.rows):
 				if self.isBlack(row, col):
@@ -48,10 +49,9 @@ class Puzzle:
 						return False
 					if col + 1 < self.rows and self.isBlack(row, col + 1):
 						return False
+		return True
 
-		# Check rule Three
-
-
+	def conformsToRuleThree(self):
 		return True
 
 	def isSolved(self):
@@ -61,7 +61,7 @@ class Puzzle:
 		return self.puzzle[row][col][0:1] == "B"
 
 	def isWhite(self, row, col):
-		return self.puzzle[row][col][0:1] == "W" \
+		return self.puzzle[row][col][0:1] == "W"\
 		or self.puzzle[row][col].isnumeric()
 
 	def markBlack(self, row, col):
@@ -92,8 +92,8 @@ class Puzzle:
 	smart		If 0, then a brute force solver will be used to solve the
 				puzzle, otherwise an intelligent solver will be used.
 """
-def solve_hitori(puzzle, smart):
 
+def solve_hitori(puzzle, smart):
 	# show the start state we are given
 	print_puzzle(puzzle)
 
@@ -101,6 +101,7 @@ def solve_hitori(puzzle, smart):
 		brute_solver(puzzle, 0)
 	else:
 		smart_solver(puzzle)
+
 
 def find_all_valid(cur_state):
 	valid_states = []
@@ -113,6 +114,7 @@ def find_all_valid(cur_state):
 			if state.isValid():
 				valid_states.append(state)
 	return valid_states
+
 
 def not_seen(state):
 	return True
@@ -133,8 +135,8 @@ def print_states_gen(total_states):
 
 	puzzle		The puzzle to solve
 """
-def brute_solver(puzzle, total_states):
 
+def brute_solver(puzzle, total_states):
 	# termination case
 	if puzzle.isSolved():
 		print_states_gen(total_states)
@@ -147,8 +149,10 @@ def brute_solver(puzzle, total_states):
 		if not_seen(state):
 			brute_solver(state, n_total_states)
 
+
 def smart_solver(puzzle):
 	print("Finding Solution...")
+
 
 def print_puzzle(puzzle):
 	board = puzzle.getPuzzle()

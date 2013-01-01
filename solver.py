@@ -27,6 +27,9 @@ class Puzzle:
 	puzzle = []
 	rows = 0
 	_markedBlack = 0
+	_ruleOne = 0
+	_ruleTwo = 0
+	_ruleThree = 0
 
 	"""
 		puzzle	The array to use to define this Puzzle.
@@ -51,6 +54,11 @@ class Puzzle:
 		return self.conformsToRuleTwo() and self.conformsToRuleThree()
 
 	def conformsToRuleOne(self):
+
+		# To help speed things up, we cache some results
+		if self._ruleOne:
+			return True
+
 		colData = {}
 		for row in range(0, self.rows):
 			rowData = []
@@ -58,25 +66,40 @@ class Puzzle:
 				num = self.getNum(row, col)
 				if self.isWhite(row, col):
 					if num in rowData or (col in colData and num in colData[col]):
+						self._ruleOne = 0
 						return False
 					rowData.append(num)
 					if col not in colData:
 						colData[col] = []
 					colData[col].append(num)
 
+		self._ruleOne = 1
 		return True
 
 	def conformsToRuleTwo(self):
+
+		# To help speed things up, we cache some results
+		if self._ruleTwo:
+			return True
+
 		for row in range(0, self.rows):
 			for col in range(0, self.rows):
 				if self.isBlack(row, col):
 					if row + 1 < self.rows and self.isBlack(row + 1, col):
+						self._ruleTwo = 0
 						return False
 					if col + 1 < self.rows and self.isBlack(row, col + 1):
+						self._ruleTwo = 0
 						return False
+		self._ruleTwo = 1
 		return True
 
 	def conformsToRuleThree(self):
+
+		# To help speed things up, we cache some results
+		if self._ruleThree:
+			return True
+
 		totalWhite = self.rows * self.rows - self._markedBlack
 		totalVisited = 0
 		queue = deque()
@@ -90,6 +113,7 @@ class Puzzle:
 		elif self.isWhite(0, 1):
 			queue.append([0, 1])
 		else:
+			self._ruleThree = 0
 			return False
 
 		while len(queue) > 0:
@@ -110,7 +134,12 @@ class Puzzle:
 			if col + 1 < self.rows and self.isWhite(row, col + 1):
 				queue.append([row, col + 1])
 
-		return totalVisited == totalWhite
+		if totalVisited == totalWhite:
+			self._ruleThree = 1
+			return True
+		else:
+			self._ruleThree = 0
+			return False
 
 	"""
 		The ordering of the rules being checked is to "fail fast".  Rule Two
@@ -118,7 +147,7 @@ class Puzzle:
 		by having that check first instead of Rule One.
 	"""
 	def isSolved(self):
-		return self.conformsToRuleTwo() and self.conformsToRuleOne() \
+		return self.conformsToRuleOne() and self.conformsToRuleTwo()  \
 		and self.conformsToRuleThree()
 
 	def isBlack(self, row, col):
@@ -129,10 +158,12 @@ class Puzzle:
 		or self.puzzle[row][col].isnumeric()
 
 	def markBlack(self, row, col):
+		self.invalidateRuleCache()
 		self.puzzle[row][col] = "B" + self.puzzle[row][col]
 		self._markedBlack += 1
 
 	def markWhite(self, row, col):
+		self.invalidateRuleCache()
 		self.puzzle[row][col] = "W" + self.puzzle[row][col]
 
 	def getNum(self, row, col):
@@ -159,6 +190,11 @@ class Puzzle:
 			for col in range(0, self.rows):
 				if self.isBlack(row, col):
 					self._markedBlack += 1
+
+	def invalidateRuleCache(self):
+		self._ruleOne = 0
+		self._ruleTwo = 0
+		self._ruleThree = 0
 
 """
 	solve_hitori

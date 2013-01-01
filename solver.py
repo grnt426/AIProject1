@@ -1,6 +1,8 @@
 __author__ = "Grant Kurtz"
 
 import copy
+import cProfile
+import pstats
 from collections import deque
 
 """
@@ -239,12 +241,21 @@ def find_all_valid(cur_state):
 
 
 def notSeen(state):
-	return state.getPuzzle() not in seenList
+	return flattenState(state) not in seenDict
+
+
+def flattenState(state):
+	resultStr = ""
+	for row in state.getPuzzle():
+		for col in row:
+			resultStr += col
+	return resultStr
+
 
 def markedSeen(state):
-	seenList.append(state.getPuzzle())
-	if len(seenList) % 1000 == 0:
-		print("Seen: " + str(len(seenList)))
+	seenDict[flattenState(state)] = 1
+	if len(seenDict) % 1000 == 0:
+		print("Seen: " + str(len(seenDict)))
 
 def clearSeen():
 	seenList = []
@@ -351,6 +362,7 @@ puzzle4 = Puzzle([
 
 # Seen List
 seenList = []
+seenDict = {}
 
 # Brute-Force Solver
 solve_hitori(puzzle1, 0)
@@ -359,7 +371,10 @@ solve_hitori(puzzle2, 0)
 print()
 solve_hitori(puzzle3, 0)
 print()
-solve_hitori(puzzle4, 0)
+cProfile.run('solve_hitori(puzzle4, 0)', 'output.txt')
+p = pstats.Stats('output.txt')
+p.sort_stats('time')
+p.print_stats()
 
 
 # Smart solver

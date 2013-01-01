@@ -164,6 +164,11 @@ class Puzzle:
 		self.puzzle[row][col] = "B" + self.puzzle[row][col]
 		self._markedBlack += 1
 
+	def undoBlackMark(self, row, col):
+		self.invalidateRuleCache()
+		self.puzzle[row][col] = self.getNum(row, col)
+		self._markedBlack -= 1
+
 	def markWhite(self, row, col):
 		self.invalidateRuleCache()
 		self.puzzle[row][col] = "W" + self.puzzle[row][col]
@@ -233,10 +238,11 @@ def find_all_valid(cur_state):
 		for col in range(0, cur_state.getRows()):
 			if cur_state.isBlack(row, col):
 				continue
-			state = Puzzle(cur_state.getCopy(), True)
-			state.markBlack(row, col)
-			if state.isValid():
+			cur_state.markBlack(row, col)
+			if cur_state.isValid():
+				state = Puzzle(cur_state.getCopy(), True)
 				valid_states.append(state)
+			cur_state.undoBlackMark(row, col)
 	return valid_states
 
 

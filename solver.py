@@ -158,11 +158,10 @@ class Puzzle:
 	def isBlack(self, row, col):
 		if row < 0 or row >= self.rows or col < 0 or col >= self.rows:
 			return False
-		return self.puzzle[row][col][0:1] == "B"
+		return self.puzzle[row][col][0] == "B"
 
 	def isWhite(self, row, col):
-		return self.puzzle[row][col][0:1] == "W"\
-		or self.puzzle[row][col].isnumeric()
+		return not self.puzzle[row][col][0] == "B"
 
 	def markBlack(self, row, col):
 		self.invalidateRuleCache()

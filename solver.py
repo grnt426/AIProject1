@@ -26,6 +26,7 @@ import random
 
 class Puzzle:
 	puzzle = ()
+	markedPuzzle = {}
 	rows = 0
 	_markedBlack = 0
 	_ruleOne = 0
@@ -41,6 +42,7 @@ class Puzzle:
 	def __init__(self, puzzle, marked):
 		self.puzzle = puzzle
 		self.rows = len(puzzle)
+		self.markedPuzzle = [[False]*self.rows for x in range(self.rows)]
 		if marked:
 			self.countMarked()
 
@@ -112,11 +114,9 @@ class Puzzle:
 		# The first or second element must be White (because otherwise this
 		# puzzle would fail Rule Two), and this puzzle must minimally be
 		# 2x2, so we are guaranteed to find a White tile
-		startRow = random.randrange(self.rows)
-		startCol = random.randrange(self.rows-1)
-		if self.isWhite(startRow, startCol):
+		if self.isWhite(0, 0):
 			queue.append((0, 0))
-		elif self.isWhite(startRow, startCol):
+		elif self.isWhite(0, 1):
 			queue.append((0, 1))
 		else:
 			self._ruleThree = 0
@@ -154,14 +154,14 @@ class Puzzle:
 	def isBlack(self, row, col):
 		if row < 0 or row >= self.rows or col < 0 or col >= self.rows:
 			return False
-		return self.puzzle[row][col][0] == "B"
+		return self.markedPuzzle[row][col]
 
 	def isWhite(self, row, col):
-		return not self.puzzle[row][col][0] == "B"
+		return not self.markedPuzzle[row][col]
 
 	def markBlack(self, row, col):
 		self.invalidateRuleCache()
-		self.puzzle[row][col] = "B" + self.puzzle[row][col]
+		self.markedPuzzle[row][col] = True
 		self._markedBlack += 1
 
 		# To speed things up, quickly check if we broke rule two
@@ -171,19 +171,15 @@ class Puzzle:
 
 	def undoBlackMark(self, row, col):
 		self.invalidateRuleCache()
-		self.puzzle[row][col] = self.getNum(row, col)
+		self.markedPuzzle[row][col] = False
 		self._markedBlack -= 1
 
 	def markWhite(self, row, col):
 		self.invalidateRuleCache()
-		self.puzzle[row][col] = "W" + self.puzzle[row][col]
+		self.markedPuzzle[row][col] = False
 
 	def getNum(self, row, col):
-		tile = self.puzzle[row][col]
-		if tile.isnumeric():
-			return tile
-		else:
-			return self.puzzle[row][col][1:]
+		return self.puzzle[row][col]
 
 	def getPuzzle(self):
 		return self.puzzle
@@ -193,12 +189,14 @@ class Puzzle:
 
 	def makePuzzleCopy(self):
 		state = self.getCopy()
+		markedPuzzle = copy.deepcopy(self.markedPuzzle)
 		p = Puzzle(state, False)
 		p._ruleOne = self._ruleOne
 		p._ruleTwo = self._ruleTwo
 		p._brokeRuleTwo = self._brokeRuleTwo
 		p._ruleThree = self._ruleThree
 		p._markedBlack = self._markedBlack
+		p.markedPuzzle = markedPuzzle
 		return p
 
 	"""
@@ -268,9 +266,12 @@ def notSeen(state):
 
 def flattenState(state):
 	resultStr = ""
-	for row in state.getPuzzle():
-		for col in row:
-			resultStr += col
+	rows = state.getRows()
+	puzzle = state.getPuzzle()
+	marked = state.markedPuzzle
+	for row in range(0, rows):
+		for col in range(0, rows):
+			resultStr += str(marked[row][col]) + str(puzzle[row][col])
 	return resultStr
 
 
@@ -351,36 +352,40 @@ def smart_solver(puzzle):
 
 def print_puzzle(puzzle):
 	board = puzzle.getPuzzle()
-	for row in board:
-		for col in row:
-			print(col, end=" ")
+	marked = puzzle.markedPuzzle
+	rows = puzzle.getRows()
+	for row in range(0, rows):
+		for col in range(0, rows):
+			if marked[row][col]:
+				print("B", end="")
+			print(str(board[row][col]), end=" ")
 		print()
 
 # Puzzles
-puzzle1 = Puzzle([
-	["2", "1"],
-	["1", "1"]
-], False)
+puzzle1 = Puzzle((
+	(2, 1),
+	(1, 1)
+), False)
 
-puzzle2 = Puzzle([
-	["1", "2", "3"],
-	["1", "1", "3"],
-	["2", "3", "3"]
-], False)
+puzzle2 = Puzzle((
+	(1, 2, 3),
+	(1, 1, 3),
+	(2, 3, 3)
+), False)
 
-puzzle3 = Puzzle([
-	["1", "2", "3"],
-	["2", "2", "3"],
-	["1", "1", "3"]
-], False)
+puzzle3 = Puzzle((
+	(1, 2, 3),
+	(2, 2, 3),
+	(1, 1, 3)
+), False)
 
-puzzle4 = Puzzle([
-	["3", "2", "5", "4", "5"],
-	["2", "3", "4", "3", "5"],
-	["4", "3", "2", "4", "4"],
-	["1", "3", "3", "5", "5"],
-	["5", "4", "1", "2", "3"]
-], False)
+puzzle4 = Puzzle((
+	(3, 2, 5, 4, 5),
+	(2, 3, 4, 3, 5),
+	(4, 3, 2, 4, 4),
+	(1, 3, 3, 5, 5),
+	(5, 4, 1, 2, 3)
+), False)
 
 # Seen List
 seenList = []
@@ -393,6 +398,7 @@ solve_hitori(puzzle2, 0)
 print()
 solve_hitori(puzzle3, 0)
 print()
+#solve_hitori(puzzle4, 0)
 cProfile.run('solve_hitori(puzzle4, 0)', 'output.txt')
 p = pstats.Stats('output.txt')
 p.sort_stats('time')

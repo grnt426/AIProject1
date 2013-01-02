@@ -31,6 +31,7 @@ class Puzzle:
 	_markedBlack = 0
 	_ruleOne = 0
 	_ruleTwo = 0
+	_brokeRuleTwo = 0
 	_ruleThree = 0
 
 	"""
@@ -83,6 +84,8 @@ class Puzzle:
 		# To help speed things up, we cache some results
 		if self._ruleTwo:
 			return True
+		if self._brokeRuleTwo:
+			return False
 
 		for row in range(0, self.rows):
 			for col in range(0, self.rows):
@@ -153,6 +156,8 @@ class Puzzle:
 		and self.conformsToRuleThree()
 
 	def isBlack(self, row, col):
+		if row < 0 or row >= self.rows or col < 0 or col >= self.rows:
+			return False
 		return self.puzzle[row][col][0:1] == "B"
 
 	def isWhite(self, row, col):
@@ -163,6 +168,11 @@ class Puzzle:
 		self.invalidateRuleCache()
 		self.puzzle[row][col] = "B" + self.puzzle[row][col]
 		self._markedBlack += 1
+
+		# To speed things up, quickly check if we broke rule two
+		if self.isBlack(row - 1, col) or self.isBlack(row + 1, col) \
+		or self.isBlack(row, col - 1) or self.isBlack(row, col + 1):
+			self._brokeRuleTwo = 1
 
 	def undoBlackMark(self, row, col):
 		self.invalidateRuleCache()
@@ -186,6 +196,16 @@ class Puzzle:
 	def getCopy(self):
 		return copy.deepcopy(self.puzzle)
 
+	def makePuzzleCopy(self):
+		state = self.getCopy()
+		p = Puzzle(state, False)
+		p._ruleOne = self._ruleOne
+		p._ruleTwo = self._ruleTwo
+		p._brokeRuleTwo = self._brokeRuleTwo
+		p._ruleThree = self._ruleThree
+		p._markedBlack = self._markedBlack
+		return p
+
 	"""
 		Updates the markedBlack counter.  Useful for manually constructed
 		puzzles where the Black tiles were marked in the array instead of
@@ -202,6 +222,7 @@ class Puzzle:
 		self._ruleOne = 0
 		self._ruleTwo = 0
 		self._ruleThree = 0
+		self._brokeRuleTwo = 0
 
 """
 	solve_hitori
@@ -240,7 +261,7 @@ def find_all_valid(cur_state):
 				continue
 			cur_state.markBlack(row, col)
 			if cur_state.isValid():
-				state = Puzzle(cur_state.getCopy(), True)
+				state = cur_state.makePuzzleCopy()
 				valid_states.append(state)
 			cur_state.undoBlackMark(row, col)
 	return valid_states

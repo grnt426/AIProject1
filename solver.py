@@ -281,7 +281,7 @@ def markedSeen(state):
 		print("Seen: " + str(len(seenDict)))
 
 def clearSeen():
-	seenList = []
+	seenDict.clear()
 
 
 def print_states_gen(total_states):

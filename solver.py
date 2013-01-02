@@ -1,9 +1,8 @@
-__author__ = "Grant Kurtz"
-
 import copy
 import cProfile
 import pstats
 from collections import deque
+import random
 
 """
 	Rules of Hitori
@@ -26,7 +25,7 @@ from collections import deque
 """
 
 class Puzzle:
-	puzzle = []
+	puzzle = ()
 	rows = 0
 	_markedBlack = 0
 	_ruleOne = 0
@@ -113,10 +112,12 @@ class Puzzle:
 		# The first or second element must be White (because otherwise this
 		# puzzle would fail Rule Two), and this puzzle must minimally be
 		# 2x2, so we are guaranteed to find a White tile
-		if self.isWhite(0, 0):
-			queue.append([0, 0])
-		elif self.isWhite(0, 1):
-			queue.append([0, 1])
+		startRow = random.randrange(self.rows)
+		startCol = random.randrange(self.rows-1)
+		if self.isWhite(startRow, startCol):
+			queue.append((0, 0))
+		elif self.isWhite(startRow, startCol):
+			queue.append((0, 1))
 		else:
 			self._ruleThree = 0
 			return False
@@ -131,13 +132,13 @@ class Puzzle:
 			row = tile[0]
 			col = tile[1]
 			if row - 1 >= 0 and self.isWhite(row - 1, col):
-				queue.append([row - 1, col])
+				queue.append((row - 1, col))
 			if row + 1 < self.rows and self.isWhite(row + 1, col):
-				queue.append([row + 1, col])
+				queue.append((row + 1, col))
 			if col - 1 >= 0 and self.isWhite(row, col - 1):
-				queue.append([row, col - 1])
+				queue.append((row, col - 1))
 			if col + 1 < self.rows and self.isWhite(row, col + 1):
-				queue.append([row, col + 1])
+				queue.append((row, col + 1))
 
 		if totalVisited == totalWhite:
 			self._ruleThree = 1
@@ -146,11 +147,6 @@ class Puzzle:
 			self._ruleThree = 0
 			return False
 
-	"""
-		The ordering of the rules being checked is to "fail fast".  Rule Two
-		is most likely to fail for the Brute solver, so time can be saved
-		by having that check first instead of Rule One.
-	"""
 	def isSolved(self):
 		return self.conformsToRuleOne() and self.conformsToRuleTwo()  \
 		and self.conformsToRuleThree()
@@ -187,7 +183,7 @@ class Puzzle:
 		if tile.isnumeric():
 			return tile
 		else:
-			return self.puzzle[row][col][1:2]
+			return self.puzzle[row][col][1:]
 
 	def getPuzzle(self):
 		return self.puzzle

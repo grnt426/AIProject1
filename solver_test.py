@@ -1,5 +1,3 @@
-__author__ = 'grnt426'
-
 from solver import Puzzle
 from solver import clearSeen
 from solver import notSeen

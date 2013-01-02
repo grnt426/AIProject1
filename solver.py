@@ -238,10 +238,10 @@ def solve_hitori(puzzle, smart):
 	print()
 
 	if smart == 0:
-#		if not brute_solver(puzzle, 0):
-#			print("No Solution")
-		if not brute_solver2(puzzle):
+		if not brute_solver(puzzle, 0):
 			print("No Solution")
+#		if not brute_solver2(puzzle):
+#			print("No Solution")
 	else:
 		smart_solver(puzzle)
 

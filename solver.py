@@ -26,7 +26,7 @@ import random
 
 class Puzzle:
 	puzzle = ()
-	markedPuzzle = {}
+	markedPuzzle = []
 	rows = 0
 	_markedBlack = 0
 	_ruleOne = 0
@@ -69,7 +69,8 @@ class Puzzle:
 			for col in range(0, self.rows):
 				num = self.getNum(row, col)
 				if self.isWhite(row, col):
-					if num in rowData or (col in colData and num in colData[col]):
+					if num in rowData or \
+					   (col in colData and num in colData[col]):
 						self._ruleOne = 0
 						return False
 					rowData.append(num)
@@ -131,13 +132,13 @@ class Puzzle:
 			totalVisited += 1
 			row = tile[0]
 			col = tile[1]
-			if row - 1 >= 0 and self.isWhite(row - 1, col):
+			if row >= 1 and not self.markedPuzzle[row - 1][col]:
 				queue.append((row - 1, col))
-			if row + 1 < self.rows and self.isWhite(row + 1, col):
+			if row < self.rows - 1 and not self.markedPuzzle[row + 1][col]:
 				queue.append((row + 1, col))
-			if col - 1 >= 0 and self.isWhite(row, col - 1):
+			if col >= 1 and not self.markedPuzzle[row][col - 1]:
 				queue.append((row, col - 1))
-			if col + 1 < self.rows and self.isWhite(row, col + 1):
+			if col < self.rows - 1 and not self.markedPuzzle[row][col + 1]:
 				queue.append((row, col + 1))
 
 		if totalVisited == totalWhite:
@@ -217,6 +218,9 @@ class Puzzle:
 		self._ruleThree = 0
 		self._brokeRuleTwo = 0
 
+	def markAdjacent(self, row, col):
+		self.markedPuzzle[row][col] = 2
+
 """
 	solve_hitori
 
@@ -264,16 +268,11 @@ def find_all_valid(cur_state):
 def notSeen(state):
 	return flattenState(state) not in seenDict
 
-
+"""
+	repr
+"""
 def flattenState(state):
-	resultStr = ""
-	rows = state.getRows()
-	puzzle = state.getPuzzle()
-	marked = state.markedPuzzle
-	for row in range(0, rows):
-		for col in range(0, rows):
-			resultStr += str(marked[row][col]) + str(puzzle[row][col])
-	return resultStr
+	return repr(state.markedPuzzle)
 
 
 def markedSeen(state):
@@ -350,8 +349,89 @@ def brute_solver2(puzzle):
 		totalStates += len(new_states)
 	return False
 
+
+def findMostRestricted(puzzle, possibles):
+
+	# Either rows or cols
+	for selector in range(0, 2):
+
+		# For all possibles in the row/col
+		for possible in possibles[selector]:
+			similarNums = len(possible)
+			for i in range(0, similarNums):
+				coords = possible[i]
+
+				# Mark adjacent numbers
+				if i + 1 < similarNums:
+					nextCoords = possible[i + 1]
+					if selector == 0:
+						if coords[0] + 1 == nextCoords[0]:
+							# Adjacent
+							puzzle.markAdjacent(coords[0], coords[1])
+							puzzle.markAdjacent(nextCoords[0], nextCoords[1])
+
+							# mark all loners black
+
+							if i - 1 >= 0:
+								prevCoords = possible[i - 1]
+								if puzzle.isMarkedAdjacent(prevCoords[0],
+														   prevCoords[1]):
+									# We are the middle element
+									puzzle.markWhite(coords[0], coords[1])
+
+									# mark all others black
+
+
+
+					pass
+
+
+	return possible
+
+
+def MRVSolver(puzzle, possible):
+	if len(possible) == 0:
+		return
+	remaining = findMostRestricted(puzzle, possible)
+	pass
+
+"""
+	Checks for all tiles that must conform to Rule One (the most
+	restrictive Rule)
+"""
+def findAllPossible(puzzle):
+	board = puzzle.getPuzzle()
+	rows = puzzle.getRows()
+
+	# First array denotes a col group or a row group
+	# Second array groups possibles into their col/row group
+	possibles = [2][rows][rows]
+	valSeenC = [0 * rows]
+	valSeenR = [0 * rows]
+	for row in range(0, rows):
+		for col in range(0, rows):
+
+			# Find possibles in this row
+			val = board[row][col] - 1
+			valSeenC[val] += 1
+			if valSeenC[val] > 1 and (row, col) not in possibles:
+				possibles[0][row][val].append((row, col))
+
+			# Find possibles in this col
+			val = board[col][row] - 1
+			valSeenR[val] += 1
+			if valSeenR[val] > 1 and (col, row) not in possibles:
+				possibles[1][col][val].append((col, row))
+		valSeenC = [0 * rows]
+		valSeenR = [0 * rows]
+	return possibles
+
+
 def smart_solver(puzzle):
 	print("Finding Solution...")
+	if puzzle.isSolved():
+		return True
+	return MRVSolver(puzzle, findAllPossible(puzzle))
 
 
 def print_puzzle(puzzle):
@@ -365,51 +445,53 @@ def print_puzzle(puzzle):
 			print(str(board[row][col]), end=" ")
 		print()
 
-# Puzzles
-puzzle1 = Puzzle((
-	(2, 1),
-	(1, 1)
-), False)
-
-puzzle2 = Puzzle((
-	(1, 2, 3),
-	(1, 1, 3),
-	(2, 3, 3)
-), False)
-
-puzzle3 = Puzzle((
-	(1, 2, 3),
-	(2, 2, 3),
-	(1, 1, 3)
-), False)
-
-puzzle4 = Puzzle((
-	(3, 2, 5, 4, 5),
-	(2, 3, 4, 3, 5),
-	(4, 3, 2, 4, 4),
-	(1, 3, 3, 5, 5),
-	(5, 4, 1, 2, 3)
-), False)
-
 # Seen List
 seenList = []
 seenDict = {}
 totalStates = 0
 
-# Brute-Force Solver
-solve_hitori(puzzle1, 0)
-print()
-solve_hitori(puzzle2, 0)
-print()
-solve_hitori(puzzle3, 0)
-print()
-#solve_hitori(puzzle4, 0)
-cProfile.run('solve_hitori(puzzle4, 0)', 'output.txt')
-p = pstats.Stats('output.txt')
-p.sort_stats('time')
-p.print_stats()
+if __name__ == "__main__":
+
+	# Puzzles
+	puzzle1 = Puzzle((
+		(2, 1),
+		(1, 1)
+	), False)
+
+	puzzle2 = Puzzle((
+		(1, 2, 3),
+		(1, 1, 3),
+		(2, 3, 3)
+	), False)
+
+	puzzle3 = Puzzle((
+		(1, 2, 3),
+		(2, 2, 3),
+		(1, 1, 3)
+	), False)
+
+	puzzle4 = Puzzle((
+		(3, 2, 5, 4, 5),
+		(2, 3, 4, 3, 5),
+		(4, 3, 2, 4, 4),
+		(1, 3, 3, 5, 5),
+		(5, 4, 1, 2, 3)
+	), False)
+
+	# Brute-Force Solver
+#	solve_hitori(puzzle1, 0)
+	print()
+#	solve_hitori(puzzle2, 0)
+	print()
+#	solve_hitori(puzzle3, 0)
+	print()
+	#solve_hitori(puzzle4, 0)
+	cProfile.run('solve_hitori(puzzle4, 0)', 'output.txt')
+	p = pstats.Stats('output.txt')
+	p.sort_stats('time')
+	p.print_stats()
 
 
-# Smart solver
-# solve_hitori(puzzle1, 1)
+	# Smart solver
+	# solve_hitori(puzzle1, 1)
 

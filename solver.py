@@ -2,7 +2,6 @@ import copy
 import cProfile
 import pstats
 from collections import deque
-import random
 
 """
 	Rules of Hitori
@@ -91,11 +90,11 @@ class Puzzle:
 
 		for row in range(0, self.rows):
 			for col in range(0, self.rows):
-				if self.isBlack(row, col):
-					if row + 1 < self.rows and self.isBlack(row + 1, col):
+				if self.markedPuzzle[row][col]:
+					if row + 1 < self.rows and self.markedPuzzle[row + 1][col]:
 						self._ruleTwo = 0
 						return False
-					if col + 1 < self.rows and self.isBlack(row, col + 1):
+					if col + 1 < self.rows and self.markedPuzzle[row][col + 1]:
 						self._ruleTwo = 0
 						return False
 		self._ruleTwo = 1
@@ -209,7 +208,7 @@ class Puzzle:
 		self._markedBlack = 0
 		for row in range(0, self.rows):
 			for col in range(0, self.rows):
-				if self.isBlack(row, col):
+				if self.markedPuzzle[row][col]:
 					self._markedBlack += 1
 
 	def invalidateRuleCache(self):
@@ -226,7 +225,8 @@ class Puzzle:
 
 	Given a Hitori puzzle, will attempt to find a solution for that puzzle.
 
-	puzzle		The puzzle to solve
+	:param puzzle:		The puzzle to solve
+	:type puzzle: Puzzle
 	smart		If 0, then a brute force solver will be used to solve the
 				puzzle, otherwise an intelligent solver will be used.
 """
@@ -370,7 +370,7 @@ def findMostRestricted(puzzle, possibles):
 							puzzle.markAdjacent(coords[0], coords[1])
 							puzzle.markAdjacent(nextCoords[0], nextCoords[1])
 
-							# mark all loners black
+							# mark all others black
 
 							if i - 1 >= 0:
 								prevCoords = possible[i - 1]
@@ -483,7 +483,7 @@ if __name__ == "__main__":
 	print()
 #	solve_hitori(puzzle2, 0)
 	print()
-#	solve_hitori(puzzle3, 0)
+	solve_hitori(puzzle3, 0)
 	print()
 	#solve_hitori(puzzle4, 0)
 	cProfile.run('solve_hitori(puzzle4, 0)', 'output.txt')

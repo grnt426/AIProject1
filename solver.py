@@ -154,7 +154,7 @@ class Puzzle:
 	def isBlack(self, row, col):
 		if row < 0 or row >= self.rows or col < 0 or col >= self.rows:
 			return False
-		return self.markedPuzzle[row][col]
+		return self.markedPuzzle[row][col] == True
 
 	def isWhite(self, row, col):
 		return not self.markedPuzzle[row][col]
@@ -219,6 +219,9 @@ class Puzzle:
 
 	def markAdjacent(self, row, col):
 		self.markedPuzzle[row][col] = 2
+
+	def isMarkedAdjacent(self, row, col):
+		return self.markedPuzzle[row][col] == 2
 
 """
 	solve_hitori
@@ -418,49 +421,50 @@ def findMostRestricted(puzzle, possibles):
 
 		# For all in each row or column
 		for possible in possibles[selector]:
-			similarNums = len(possible)
 			
 			# For all in each particular row or column
-			for i in range(0, similarNums):
-				coords = possible[i]
+			for nums in possible:
+				similarNums = len(nums)
+				for i in range(0, similarNums):
+					coords = nums[i]
 
-				# We need to find the first adjacent group
-				if i + 1 < similarNums:
+					# We need to find the first adjacent group
+					if i + 1 < similarNums:
 
-					# The coordinates are given in ascending order, so we
-					# can assume that the very next coordinate is the next
-					# closest like-number in our group.
-					nextCoords = possible[i + 1]
-					if (selector == 0 and coords[0] + 1 == nextCoords[0]) \
-					or (selector == 1 and coords[1] + 1 == nextCoords[1]):
-							
-						# Adjacent Tiles
-						puzzle.markAdjacent(coords[0], coords[1])
-						puzzle.markAdjacent(nextCoords[0], nextCoords[1])
+						# The coordinates are given in ascending order, so we
+						# can assume that the very next coordinate is the next
+						# closest like-number in our group.
+						nextCoords = nums[i + 1]
+						if (selector == 0 and coords[1] + 1 == nextCoords[1]) \
+						or (selector == 1 and coords[0] + 1 == nextCoords[0]):
 
-						# We can next check if the current coordinate is the
-						# middle coordinate
-						if i - 1 >= 0:
-							prevCoords = possible[i - 1]
-							if puzzle.isMarkedAdjacent(prevCoords[0],
-													   prevCoords[1]):
-								# We are the middle element
-								puzzle.markWhite(coords[0], coords[1])
+							# Adjacent Tiles
+							puzzle.markAdjacent(coords[0], coords[1])
+							puzzle.markAdjacent(nextCoords[0], nextCoords[1])
 
-								# mark all others black
-								markTheseBlack(puzzle, possible, coords)
+							# We can next check if the current coordinate is the
+							# middle coordinate
+							if i - 1 >= 0:
+								prevCoords = nums[i - 1]
+								if puzzle.isMarkedAdjacent(prevCoords[0],
+														   prevCoords[1]):
+									# We are the middle element
+									puzzle.markWhite(coords[0], coords[1])
+
+									# mark all others black
+									markTheseBlack(puzzle, nums, [coords])
+								else:
+									# mark everyone, but this adjacent group, black
+									markTheseBlack(puzzle, nums, (coords, nextCoords))
+
 							else:
 								# mark everyone, but this adjacent group, black
-								markTheseBlack(puzzle, possible, (coords, nextCoords))
-							
-						else:
-							# mark everyone, but this adjacent group, black
-							markTheseBlack(puzzle, possible, (coords, nextCoords))
-							
-						# We don't need to keep processing the rest of this
-						# group of numbers within this selector since we marked
-						# everything already
-						continue 
+								markTheseBlack(puzzle, nums, (coords, nextCoords))
+
+							# We don't need to keep processing the rest of this
+							# group of numbers within this selector since we marked
+							# everything already
+							continue
 
 	return possible
 

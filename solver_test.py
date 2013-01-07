@@ -1,4 +1,4 @@
-from solver import Puzzle
+from solver import Puzzle, findMostRestricted
 from solver import clearSeen
 from solver import notSeen
 from solver import markedSeen
@@ -73,6 +73,64 @@ def test_SeenList():
 	markedSeen(p)
 	assert(not notSeen(p))
 	assert(not notSeen(p2))
+def test_findMostRestricted():
+	b = (
+		(1, 2, 3),
+		(1, 1, 3),
+		(2, 3, 3)
+	)
+	p = Puzzle(b , False)
+	possibles = [
+		[
+			[],
+			[
+				[[1, 0], [1, 1]]
+			],
+			[
+				[],
+				[],
+				[
+					[2, 1],
+					[2, 2]
+				]
+			]
+		],
+		[
+			[
+				[
+					[0, 0],
+					[1, 0]
+				]
+			],
+			[],
+			[
+				[],
+				[],
+				[
+					[0, 2],
+					[1, 2],
+					[2, 2]
+				]
+			]
+		]
+	]
+	findMostRestricted(p, possibles)
+
+	# The first iteration should just mark the middle 3 in the second column
+	# as White, and the two adjacent as Black
+	assert(p.isWhite(1, 2))
+	assert(p.isBlack(2, 2))
+	assert(p.isBlack(0, 2))
+
+	# All other adjacent numbers should be marked as adjacent
+	assert(p.isMarkedAdjacent(0, 0))
+	assert(p.isMarkedAdjacent(1, 0))
+	assert(p.isMarkedAdjacent(1, 1))
+	assert(p.isMarkedAdjacent(2, 1))
+
+	# The other two tiles should remain marked White
+	assert(p.isWhite(0, 1))
+	assert(p.isWhite(2, 0))
 
 # Execute Tests
 test_getRows()
@@ -91,3 +149,4 @@ test_conformsToRuleThreeIsolatedWhiteTile()
 test_conformsToRuleOneNoneMarked()
 test_conformsToRuleOneMultipleMarked()
 test_SeenList()
+test_findMostRestricted()

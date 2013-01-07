@@ -350,41 +350,117 @@ def brute_solver2(puzzle):
 	return False
 
 
+def markTheseBlack(puzzle, toBeMarked, notThese):
+	markedPuzzle = puzzle.markedPuzzle
+	for coords in toBeMarked:
+		if coords in notThese:
+			continue
+		markedPuzzle[coords[0]][coords[1]] = True
+	puzzle.markedPuzzle = markedPuzzle
+	pass
+
+
+"""
+	For marking the most restricted values, we rely on two Forced Actions and
+	the limitations of the puzzle configuration, as discussed below.
+	
+	The Configuration Constraints are derived from all the Rules, which	disallow
+	certain puzzle configurations from being possible. If a Puzzle has an 
+	invalid configuration, then the Puzzle can not be solved.
+	
+	Configuration Constraints:
+		- No more than three like-numbers may be adjacent in a row (xor column).
+			- Otherwise Rule Two and Rule One are broken.
+			
+		- No more than four like-numbers may be touching (in a combination of
+		both rows and columns).
+			- Otherwise Rule Three might be broken (an isolated White tile in 
+			the center), and Rules One and Two would be broken for the same
+			reason as the first configuration constraint.
+			
+		- Only one adjacent group is possible for each number on any given row
+		(xor column).
+			- Otherwise Rule One and Rule Two would be broken.
+			
+	From these puzzle Configuration Constraints, we can always safely make two 
+	Forced Actions. If the Forced Actions result in an invalid Puzzle state that
+	would break any of the Rules, then the Puzzle is not solvable.
+	
+	Forced Actions:
+		- If three like-numbers are adjacent, the middle MUST be White, and 
+		all other like-number tiles on that row (xor column) MUST be Black.
+			
+		- If two like-numbers are adjacent, all other like-numbers on that row
+		(xor column) MUST be Black, and the two adjacent MUST be oppositely 
+		assigned.
+
+	possibles	An array of possible tiles that need consideration for being
+				marked black. The array looks as follows:
+
+					[2][rows][rows][2]
+
+				Where the first array marks if the coordinate is from a vertical
+				group, or a horizontal group.  The second nested array is the
+				particular row of the horizontal group (or column of a vertical
+				group). The third array groups the coordinates into the number
+				of that coordinate. This ensures that we are only looking at
+				coordinates for like-numbers. The final nested array gives the
+				row and column of the coordinate of the tile that needs to be
+				considered for marking Black. Note, that the third nested array
+				assumes that the coordinates are given in ascending order
+				(closest to the origin first).
+"""
 def findMostRestricted(puzzle, possibles):
 
-	# Either rows or cols
+	# The selector is for controlling if we are scanning DOWN a COLUMN or
+	# ACROSS a ROW (0 is ROW, and 1 is COLUMN).
 	for selector in range(0, 2):
 
-		# For all possibles in the row/col
+		# For all in each row or column
 		for possible in possibles[selector]:
 			similarNums = len(possible)
+			
+			# For all in each particular row or column
 			for i in range(0, similarNums):
 				coords = possible[i]
 
-				# Mark adjacent numbers
+				# We need to find the first adjacent group
 				if i + 1 < similarNums:
+
+					# The coordinates are given in ascending order, so we
+					# can assume that the very next coordinate is the next
+					# closest like-number in our group.
 					nextCoords = possible[i + 1]
-					if selector == 0:
-						if coords[0] + 1 == nextCoords[0]:
-							# Adjacent
-							puzzle.markAdjacent(coords[0], coords[1])
-							puzzle.markAdjacent(nextCoords[0], nextCoords[1])
+					if (selector == 0 and coords[0] + 1 == nextCoords[0]) \
+					or (selector == 1 and coords[1] + 1 == nextCoords[1]):
+							
+						# Adjacent Tiles
+						puzzle.markAdjacent(coords[0], coords[1])
+						puzzle.markAdjacent(nextCoords[0], nextCoords[1])
 
-							# mark all others black
+						# We can next check if the current coordinate is the
+						# middle coordinate
+						if i - 1 >= 0:
+							prevCoords = possible[i - 1]
+							if puzzle.isMarkedAdjacent(prevCoords[0],
+													   prevCoords[1]):
+								# We are the middle element
+								puzzle.markWhite(coords[0], coords[1])
 
-							if i - 1 >= 0:
-								prevCoords = possible[i - 1]
-								if puzzle.isMarkedAdjacent(prevCoords[0],
-														   prevCoords[1]):
-									# We are the middle element
-									puzzle.markWhite(coords[0], coords[1])
-
-									# mark all others black
-
-
-
-					pass
-
+								# mark all others black
+								markTheseBlack(puzzle, possible, coords)
+							else:
+								# mark everyone, but this adjacent group, black
+								markTheseBlack(puzzle, possible, (coords, nextCoords))
+							
+						else:
+							# mark everyone, but this adjacent group, black
+							markTheseBlack(puzzle, possible, (coords, nextCoords))
+							
+						# We don't need to keep processing the rest of this
+						# group of numbers within this selector since we marked
+						# everything already
+						continue 
 
 	return possible
 

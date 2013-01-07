@@ -238,6 +238,7 @@ def solve_hitori(puzzle, smart):
 
 	# Make sure our Seen List is empty
 	clearSeen()
+	markedSeen(puzzle)
 	totalStates = 0
 
 	# show the start state we are given
@@ -258,7 +259,7 @@ def find_all_valid(cur_state):
 	valid_states = []
 	for row in range(0, cur_state.getRows()):
 		for col in range(0, cur_state.getRows()):
-			if cur_state.isBlack(row, col):
+			if cur_state.markedPuzzle[row][col]:
 				continue
 			cur_state.markBlack(row, col)
 			if cur_state.isValid():
@@ -271,16 +272,13 @@ def find_all_valid(cur_state):
 def notSeen(state):
 	return flattenState(state) not in seenDict
 
-"""
-	repr
-"""
 def flattenState(state):
 	return repr(state.markedPuzzle)
 
 
 def markedSeen(state):
 	seenDict[flattenState(state)] = 1
-	if len(seenDict) % 1000 == 0:
+	if len(seenDict) % 5000 == 0:
 		print("Seen: " + str(len(seenDict)))
 
 def clearSeen():
@@ -331,15 +329,11 @@ def brute_solver2(puzzle):
 	while len(queue) > 0:
 		state = queue.popleft()
 
-		# Only bother with new states
 		if notSeen(state):
 			markedSeen(state)
 		else:
 			continue
 
-		# Check if this is the winning state afterwards, since we are more
-		# likely to find a duplicate state (and therefore not need to do more)
-		# instead of finding the goal state
 		if state.isSolved():
 			print("Final Solution State")
 			print_puzzle(state)
@@ -466,7 +460,7 @@ def findMostRestricted(puzzle, possibles):
 							# everything already
 							continue
 
-	return possible
+	return possibles
 
 
 def MRVSolver(puzzle, possible):
@@ -485,25 +479,32 @@ def findAllPossible(puzzle):
 
 	# First array denotes a col group or a row group
 	# Second array groups possibles into their col/row group
-	possibles = [2][rows][rows]
-	valSeenC = [0 * rows]
-	valSeenR = [0 * rows]
+#	possibles = [2][rows][rows]
+	possibles = [[[[] for x in range(rows)] for y in range(rows)] for z in range(2)]
+	valSeenC = [0] * rows
+	valSeenR = [0] * rows
 	for row in range(0, rows):
 		for col in range(0, rows):
 
 			# Find possibles in this row
 			val = board[row][col] - 1
-			valSeenC[val] += 1
-			if valSeenC[val] > 1 and (row, col) not in possibles:
-				possibles[0][row][val].append((row, col))
+			valSeenR[val] += 1
+
+			# We only need to add all like-numbers once
+			if valSeenR[val] == 2:
+				for innerCol in range(0, rows):
+					if board[row][innerCol] - 1 == val:
+						possibles[0][row][val].append([row, innerCol])
 
 			# Find possibles in this col
 			val = board[col][row] - 1
-			valSeenR[val] += 1
-			if valSeenR[val] > 1 and (col, row) not in possibles:
-				possibles[1][col][val].append((col, row))
-		valSeenC = [0 * rows]
-		valSeenR = [0 * rows]
+			valSeenC[val] += 1
+			if valSeenC[val] == 2:
+				for innerCol in range(0, rows):
+					if board[innerCol][row] - 1 == val:
+						possibles[1][row][val].append([innerCol, row])
+		valSeenC = [0] * rows
+		valSeenR = [0] * rows
 	return possibles
 
 
@@ -559,13 +560,13 @@ if __name__ == "__main__":
 	), False)
 
 	# Brute-Force Solver
-#	solve_hitori(puzzle1, 0)
+	solve_hitori(puzzle1, 0)
 	print()
 #	solve_hitori(puzzle2, 0)
 	print()
-	solve_hitori(puzzle3, 0)
+#	solve_hitori(puzzle3, 0)
 	print()
-	#solve_hitori(puzzle4, 0)
+#	solve_hitori(puzzle4, 0)
 	cProfile.run('solve_hitori(puzzle4, 0)', 'output.txt')
 	p = pstats.Stats('output.txt')
 	p.sort_stats('time')

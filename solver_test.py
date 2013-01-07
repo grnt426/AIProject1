@@ -1,4 +1,4 @@
-from solver import Puzzle, findMostRestricted
+from solver import Puzzle, findMostRestricted, findAllPossible
 from solver import clearSeen
 from solver import notSeen
 from solver import markedSeen
@@ -132,6 +132,61 @@ def test_findMostRestricted():
 	assert(p.isWhite(0, 1))
 	assert(p.isWhite(2, 0))
 
+def test_findAllPossible():
+	b = (
+			(1, 2, 3),
+			(1, 1, 3),
+			(2, 3, 3)
+		)
+	p = Puzzle(b , False)
+	returnedPossibles = findAllPossible(p)
+	possibles = [
+			[
+				[[], [], []],
+				[
+					[
+						[1, 0],
+						[1, 1]],
+					[],
+					[]
+				],
+				[
+					[],
+					[],
+					[
+						[2, 1],
+						[2, 2]
+					]
+				]
+			],
+			[
+				[
+					[
+						[0, 0],
+						[1, 0]
+					],
+					[],
+					[]
+				],
+				[
+					[],
+					[],
+					[]
+				],
+				[
+					[],
+					[],
+					[
+						[0, 2],
+						[1, 2],
+						[2, 2]
+					]
+				]
+			]
+		]
+	assert(possibles == returnedPossibles)
+	pass
+
 # Execute Tests
 test_getRows()
 test_markBlack()
@@ -150,3 +205,4 @@ test_conformsToRuleOneNoneMarked()
 test_conformsToRuleOneMultipleMarked()
 test_SeenList()
 test_findMostRestricted()
+test_findAllPossible()

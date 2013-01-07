@@ -1,6 +1,4 @@
 import copy
-import cProfile
-import pstats
 from collections import deque
 
 """
@@ -33,6 +31,12 @@ class Puzzle:
 	_brokeRuleTwo = 0
 	_ruleThree = 0
 
+	_WHITE = 0
+	_BLACK = 1
+	_ADJACENT = 2
+	_EXPLICITLY_WHITE = 3
+
+
 	"""
 		puzzle	The array to use to define this Puzzle.
 		marked	Whether elements in the array were pre-marked before passing
@@ -41,7 +45,7 @@ class Puzzle:
 	def __init__(self, puzzle, marked):
 		self.puzzle = puzzle
 		self.rows = len(puzzle)
-		self.markedPuzzle = [[False]*self.rows for x in range(self.rows)]
+		self.markedPuzzle = [[self._WHITE]*self.rows for x in range(self.rows)]
 		if marked:
 			self.countMarked()
 
@@ -90,11 +94,11 @@ class Puzzle:
 
 		for row in range(0, self.rows):
 			for col in range(0, self.rows):
-				if self.markedPuzzle[row][col]:
-					if row + 1 < self.rows and self.markedPuzzle[row + 1][col]:
+				if self.markedPuzzle[row][col] == self._BLACK:
+					if row + 1 < self.rows and self.markedPuzzle[row + 1][col] == self._BLACK:
 						self._ruleTwo = 0
 						return False
-					if col + 1 < self.rows and self.markedPuzzle[row][col + 1]:
+					if col + 1 < self.rows and self.markedPuzzle[row][col + 1] == self._BLACK:
 						self._ruleTwo = 0
 						return False
 		self._ruleTwo = 1
@@ -131,13 +135,13 @@ class Puzzle:
 			totalVisited += 1
 			row = tile[0]
 			col = tile[1]
-			if row >= 1 and not self.markedPuzzle[row - 1][col]:
+			if row >= 1 and not self.markedPuzzle[row - 1][col] == self._BLACK:
 				queue.append((row - 1, col))
-			if row < self.rows - 1 and not self.markedPuzzle[row + 1][col]:
+			if row < self.rows - 1 and not self.markedPuzzle[row + 1][col] == self._BLACK:
 				queue.append((row + 1, col))
-			if col >= 1 and not self.markedPuzzle[row][col - 1]:
+			if col >= 1 and not self.markedPuzzle[row][col - 1] == self._BLACK:
 				queue.append((row, col - 1))
-			if col < self.rows - 1 and not self.markedPuzzle[row][col + 1]:
+			if col < self.rows - 1 and not self.markedPuzzle[row][col + 1] == self._BLACK:
 				queue.append((row, col + 1))
 
 		if totalVisited == totalWhite:
@@ -154,14 +158,18 @@ class Puzzle:
 	def isBlack(self, row, col):
 		if row < 0 or row >= self.rows or col < 0 or col >= self.rows:
 			return False
-		return self.markedPuzzle[row][col] == True
+		return self.markedPuzzle[row][col] == self._BLACK
 
 	def isWhite(self, row, col):
-		return not self.markedPuzzle[row][col]
+		return self.markedPuzzle[row][col] == self._WHITE or \
+			   self.markedPuzzle[row][col] == self._EXPLICITLY_WHITE
+
+	def isExplicitlyMarkedWhite(self, row, col):
+		return self.markedPuzzle[row][col] == self._EXPLICITLY_WHITE
 
 	def markBlack(self, row, col):
 		self.invalidateRuleCache()
-		self.markedPuzzle[row][col] = True
+		self.markedPuzzle[row][col] = self._BLACK
 		self._markedBlack += 1
 
 		# To speed things up, quickly check if we broke rule two
@@ -171,12 +179,15 @@ class Puzzle:
 
 	def undoBlackMark(self, row, col):
 		self.invalidateRuleCache()
-		self.markedPuzzle[row][col] = False
+		self.markedPuzzle[row][col] = self._WHITE
 		self._markedBlack -= 1
 
 	def markWhite(self, row, col):
 		self.invalidateRuleCache()
-		self.markedPuzzle[row][col] = False
+		self.markedPuzzle[row][col] = self._WHITE
+
+	def markExplicitlyWhite(self, row, col):
+		self.markedPuzzle[row][col] = self._EXPLICITLY_WHITE
 
 	def getNum(self, row, col):
 		return self.puzzle[row][col]
@@ -208,7 +219,7 @@ class Puzzle:
 		self._markedBlack = 0
 		for row in range(0, self.rows):
 			for col in range(0, self.rows):
-				if self.markedPuzzle[row][col]:
+				if self.markedPuzzle[row][col] == self._BLACK:
 					self._markedBlack += 1
 
 	def invalidateRuleCache(self):
@@ -218,10 +229,10 @@ class Puzzle:
 		self._brokeRuleTwo = 0
 
 	def markAdjacent(self, row, col):
-		self.markedPuzzle[row][col] = 2
+		self.markedPuzzle[row][col] = self._ADJACENT
 
 	def isMarkedAdjacent(self, row, col):
-		return self.markedPuzzle[row][col] == 2
+		return self.markedPuzzle[row][col] == self._ADJACENT
 
 """
 	solve_hitori
@@ -259,7 +270,7 @@ def find_all_valid(cur_state):
 	valid_states = []
 	for row in range(0, cur_state.getRows()):
 		for col in range(0, cur_state.getRows()):
-			if cur_state.markedPuzzle[row][col]:
+			if cur_state.markedPuzzle[row][col] == cur_state._BLACK:
 				continue
 			cur_state.markBlack(row, col)
 			if cur_state.isValid():
@@ -352,7 +363,7 @@ def markTheseBlack(puzzle, toBeMarked, notThese):
 	for coords in toBeMarked:
 		if coords in notThese:
 			continue
-		markedPuzzle[coords[0]][coords[1]] = True
+		markedPuzzle[coords[0]][coords[1]] = puzzle._BLACK
 	puzzle.markedPuzzle = markedPuzzle
 	pass
 
@@ -394,19 +405,21 @@ def markTheseBlack(puzzle, toBeMarked, notThese):
 	possibles	An array of possible tiles that need consideration for being
 				marked black. The array looks as follows:
 
-					[2][rows][rows][2]
+					[2][rows][rows][x][2]
 
 				Where the first array marks if the coordinate is from a vertical
 				group, or a horizontal group.  The second nested array is the
 				particular row of the horizontal group (or column of a vertical
 				group). The third array groups the coordinates into the number
 				of that coordinate. This ensures that we are only looking at
-				coordinates for like-numbers. The final nested array gives the
+				coordinates for like-numbers. The fourth array is the number of
+				like numbers in that group. The final nested array gives the
 				row and column of the coordinate of the tile that needs to be
 				considered for marking Black. Note, that the third nested array
 				assumes that the coordinates are given in ascending order
 				(closest to the origin first).
 """
+
 def findMostRestricted(puzzle, possibles):
 
 	# The selector is for controlling if we are scanning DOWN a COLUMN or
@@ -414,13 +427,18 @@ def findMostRestricted(puzzle, possibles):
 	for selector in range(0, 2):
 
 		# For all in each row or column
-		for possible in possibles[selector]:
+		for possible in range(0, puzzle.rows):
 			
 			# For all in each particular row or column
-			for nums in possible:
-				similarNums = len(nums)
+			for nums in range(0, puzzle.rows):
+				similarNums = len(possibles[selector][possible][nums])
 				for i in range(0, similarNums):
-					coords = nums[i]
+					coords = possibles[selector][possible][nums][i]
+
+					# This may have been marked Black already from a previous
+					# operation. If so, then skip it.
+					if puzzle.isBlack(coords[0], coords[1]):
+						continue
 
 					# We need to find the first adjacent group
 					if i + 1 < similarNums:
@@ -428,38 +446,57 @@ def findMostRestricted(puzzle, possibles):
 						# The coordinates are given in ascending order, so we
 						# can assume that the very next coordinate is the next
 						# closest like-number in our group.
-						nextCoords = nums[i + 1]
+						nextCoords = possibles[selector][possible][nums][i + 1]
 						if (selector == 0 and coords[1] + 1 == nextCoords[1]) \
 						or (selector == 1 and coords[0] + 1 == nextCoords[0]):
 
-							# Adjacent Tiles
-							puzzle.markAdjacent(coords[0], coords[1])
-							puzzle.markAdjacent(nextCoords[0], nextCoords[1])
+							# If this tile is already marked adjacent, see
+							# if maybe we can resolve it
+							if puzzle.isMarkedAdjacent(coords[0], coords[1]):
 
-							# We can next check if the current coordinate is the
-							# middle coordinate
-							if i - 1 >= 0:
-								prevCoords = nums[i - 1]
-								if puzzle.isMarkedAdjacent(prevCoords[0],
-														   prevCoords[1]):
-									# We are the middle element
-									puzzle.markWhite(coords[0], coords[1])
+								# If our neighbor was resolved to Black, then
+								# we MUST be White.  Mark all others Black
+								if puzzle.isBlack(nextCoords[0], nextCoords[1]):
+									puzzle.markExplicitlyWhite(coords[0], coords[1])
+									markTheseBlack(puzzle,
+												   possibles[selector][possible][nums],
+												   coords)
+									removeFromPossibles(possibles,
+														possibles[selector][possible][nums],
+														[])
 
-									# mark all others black
-									markTheseBlack(puzzle, nums, [coords])
-								else:
-									# mark everyone, but this adjacent group, black
-									markTheseBlack(puzzle, nums, (coords, nextCoords))
-
+							# Otherwise we are seeing this pair for the first
+							# time
 							else:
+								puzzle.markAdjacent(coords[0], coords[1])
+								puzzle.markAdjacent(nextCoords[0], nextCoords[1])
+
 								# mark everyone, but this adjacent group, black
-								markTheseBlack(puzzle, nums, (coords, nextCoords))
+								markTheseBlack(puzzle,
+											   possibles[selector][possible][nums],
+											   [coords, nextCoords])
 
-							# We don't need to keep processing the rest of this
-							# group of numbers within this selector since we marked
-							# everything already
-							continue
 
+								# Add back the adjacent ones, we only needed to
+								# remove the others
+								possibles[selector][possible][nums].append(coords)
+								possibles[selector][possible][nums].append(nextCoords)
+
+								# We don't need to keep processing the rest of this
+								# group of numbers within this selector since we marked
+								# everything already
+								break
+
+	return possibles
+
+def removeFromPossibles(possibles, removeThese, notThese):
+	removeThese = copy.deepcopy(removeThese)
+	for selector in possibles:
+		for possible in selector:
+			for nums in possible:
+				for element in removeThese:
+					if element in nums and element not in notThese:
+						nums.remove(element)
 	return possibles
 
 
@@ -479,7 +516,6 @@ def findAllPossible(puzzle):
 
 	# First array denotes a col group or a row group
 	# Second array groups possibles into their col/row group
-#	possibles = [2][rows][rows]
 	possibles = [[[[] for x in range(rows)] for y in range(rows)] for z in range(2)]
 	valSeenC = [0] * rows
 	valSeenR = [0] * rows
@@ -567,10 +603,10 @@ if __name__ == "__main__":
 #	solve_hitori(puzzle3, 0)
 	print()
 #	solve_hitori(puzzle4, 0)
-	cProfile.run('solve_hitori(puzzle4, 0)', 'output.txt')
-	p = pstats.Stats('output.txt')
-	p.sort_stats('time')
-	p.print_stats()
+#	cProfile.run('solve_hitori(puzzle4, 0)', 'output.txt')
+#	p = pstats.Stats('output.txt')
+#	p.sort_stats('time')
+#	p.print_stats()
 
 
 	# Smart solver

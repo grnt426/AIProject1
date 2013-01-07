@@ -81,51 +81,60 @@ def test_findMostRestricted():
 	)
 	p = Puzzle(b , False)
 	possibles = [
-		[
-			[],
-			[
-				[[1, 0], [1, 1]]
-			],
-			[
-				[],
-				[],
 				[
-					[2, 1],
-					[2, 2]
+					[[], [], []],
+					[
+						[
+							[1, 0],
+							[1, 1]],
+						[],
+						[]
+					],
+					[
+						[],
+						[],
+						[
+							[2, 1],
+							[2, 2]
+						]
+					]
+				],
+				[
+					[
+						[
+							[0, 0],
+							[1, 0]
+						],
+						[],
+						[]
+					],
+					[
+						[],
+						[],
+						[]
+					],
+					[
+						[],
+						[],
+						[
+							[0, 2],
+							[1, 2],
+							[2, 2]
+						]
+					]
 				]
 			]
-		],
-		[
-			[
-				[
-					[0, 0],
-					[1, 0]
-				]
-			],
-			[],
-			[
-				[],
-				[],
-				[
-					[0, 2],
-					[1, 2],
-					[2, 2]
-				]
-			]
-		]
-	]
 	findMostRestricted(p, possibles)
 
-	# The first iteration should just mark the middle 3 in the second column
-	# as White, and the two adjacent as Black
-	assert(p.isWhite(1, 2))
+	# The first iteration should just mark bottom-right three as black
 	assert(p.isBlack(2, 2))
-	assert(p.isBlack(0, 2))
 
 	# All other adjacent numbers should be marked as adjacent
 	assert(p.isMarkedAdjacent(0, 0))
+	assert(p.isMarkedAdjacent(0, 2))
 	assert(p.isMarkedAdjacent(1, 0))
 	assert(p.isMarkedAdjacent(1, 1))
+	assert(p.isMarkedAdjacent(1, 2))
 	assert(p.isMarkedAdjacent(2, 1))
 
 	# The other two tiles should remain marked White

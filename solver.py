@@ -359,14 +359,10 @@ def brute_solver2(puzzle):
 
 
 def markTheseBlack(puzzle, toBeMarked, notThese):
-	markedPuzzle = puzzle.markedPuzzle
 	for coords in toBeMarked:
 		if coords in notThese:
 			continue
-		markedPuzzle[coords[0]][coords[1]] = puzzle._BLACK
-	puzzle.markedPuzzle = markedPuzzle
-	pass
-
+		puzzle.markBlack(coords[0], coords[1])
 
 """
 	For marking the most restricted values, we rely on two Forced Actions and
@@ -401,6 +397,41 @@ def markTheseBlack(puzzle, toBeMarked, notThese):
 		- If two like-numbers are adjacent, all other like-numbers on that row
 		(xor column) MUST be Black, and the two adjacent MUST be oppositely 
 		assigned.
+		
+		- If a tile has more than one adjacent neighbor on its row and column,
+		then it is always safe to assume that first tile is Black. In the case
+		like below:
+				
+				X X X X
+				X 5 5 X
+				X 5 5 X
+				X X X X						Figure 1.
+		
+		for any arbitrary sized board where a configuration of a two-by-two
+		block of numbers appears. This is only true because we first check for
+		explicit Black neighbors first.  If we have no Black neighbors, but we
+		have two (or more) unassigned adjacent neighbors, then we have to be
+		Black.  This is also because in puzzles like the one below:
+
+				X X X X X
+				X 1 1 1 X
+				X 1 1 X X
+				X 1 X X X
+				X X X X X					Figure 2.
+				
+		when our algorithm first finds pairs of adjacent tiles, we immediately
+		mark everything else in that row (xor column) as Black.  This guarantees
+		that any arbitrary groups of similar numbers, so long as they are
+		conforming to the Puzzle Configuration Constraints, and because of how
+		the puzzle is traversed when marking pairs, the third element of each
+		"branch" will already be Black. This forces the element next to us to
+		be White anyway, and us Black. This leap in logic is necessary,
+		because it saves us from having to explicitly check for Figure 2 and
+		have foregone solving Figure 1.  We can't solve Figure 1 until we are
+		sure that it is not a subset of Figure 2. Since we know that Figure 2
+		would already be partially-solved, we can treat all examples of Figure 1
+		indiscriminately.
+				
 
 	possibles	An array of possible tiles that need consideration for being
 				marked black. The array looks as follows:
@@ -420,7 +451,7 @@ def markTheseBlack(puzzle, toBeMarked, notThese):
 				(closest to the origin first).
 """
 
-def findMostRestricted(puzzle, possibles):
+def findMostRestricted(puzzle, possibles, relaxed):
 
 	# The selector is for controlling if we are scanning DOWN a COLUMN or
 	# ACROSS a ROW (0 is ROW, and 1 is COLUMN).
@@ -440,48 +471,112 @@ def findMostRestricted(puzzle, possibles):
 					if puzzle.isBlack(coords[0], coords[1]):
 						continue
 
-					# We need to find the first adjacent group
-					if i + 1 < similarNums:
+					# If this tile is already marked adjacent, see
+					# if maybe we can resolve it
+					if puzzle.isMarkedAdjacent(coords[0], coords[1]):
 
-						# The coordinates are given in ascending order, so we
-						# can assume that the very next coordinate is the next
-						# closest like-number in our group.
-						nextCoords = possibles[selector][possible][nums][i + 1]
-						if (selector == 0 and coords[1] + 1 == nextCoords[1]) \
-						or (selector == 1 and coords[0] + 1 == nextCoords[0]):
+						# Check around us for neighbors (pretty ugly...)
+						blackNeighbor = False
+						adjacentNeighbors = 0
+						explicitWhiteNeighbor = False
+						above = coords[0] - 1
+						below = coords[0] + 1
+						left = coords[1] - 1
+						right = coords[1] + 1
+						if above >= 0 and puzzle.getNum(above, coords[1]) - 1 == nums:
+							if puzzle.isBlack(above, coords[1]):
+								blackNeighbor = True
+							elif puzzle.isExplicitlyMarkedWhite(above, coords[1]):
+								explicitWhiteNeighbor = True
+							elif puzzle.isMarkedAdjacent(above, coords[1]):
+								adjacentNeighbors += 1
+						if below < puzzle.rows and puzzle.getNum(below, coords[1]) - 1 == nums:
+							if puzzle.isBlack(below, coords[1]):
+								blackNeighbor = True
+							elif puzzle.isExplicitlyMarkedWhite(below, coords[1]):
+								explicitWhiteNeighbor = True
+							elif puzzle.isMarkedAdjacent(below, coords[1]):
+								adjacentNeighbors += 1
+						if left >= 0 and puzzle.getNum(coords[0], left) - 1 == nums:
+							if puzzle.isBlack(coords[0], left):
+								blackNeighbor = True
+							elif puzzle.isExplicitlyMarkedWhite(coords[0], left):
+								explicitWhiteNeighbor = True
+							elif puzzle.isMarkedAdjacent(coords[0], left):
+								adjacentNeighbors += 1
+						if right < puzzle.rows and puzzle.getNum(coords[0], right) - 1 == nums:
+							if puzzle.isBlack(coords[0], right):
+								blackNeighbor = True
+							elif puzzle.isExplicitlyMarkedWhite(coords[0], right):
+								explicitWhiteNeighbor = True
+							elif puzzle.isMarkedAdjacent(coords[0], right):
+								adjacentNeighbors += 1
 
-							# If this tile is already marked adjacent, see
-							# if maybe we can resolve it
-							if puzzle.isMarkedAdjacent(coords[0], coords[1]):
+						# If we have any Black neighbors, we MUST be White to
+						# conform to Rule Two. We are also free to mark all
+						# similar numbers in this group Black (to conform with
+						# Rule 1).
+						if blackNeighbor:
+							markTheseBlack(puzzle,
+										   possibles[selector][possible][nums],
+										   [coords])
+							removeFromPossibles(possibles,
+												possibles[selector][possible][nums],
+												[])
+							puzzle.markExplicitlyWhite(coords[0], coords[1])
+							break
 
-								# If our neighbor was resolved to Black, then
-								# we MUST be White.  Mark all others Black
-								if puzzle.isBlack(nextCoords[0], nextCoords[1]):
-									puzzle.markExplicitlyWhite(coords[0], coords[1])
-									markTheseBlack(puzzle,
-												   possibles[selector][possible][nums],
-												   coords)
-									removeFromPossibles(possibles,
-														possibles[selector][possible][nums],
-														[])
+						# If we have any (explicitly) White neighbors, we MUST
+						# be Black to conform to Rule Two. We are also free to
+						# mark all similarly unassigned numbers in this group
+						# Black.
+						elif explicitWhiteNeighbor:
+							markTheseBlack(puzzle,
+										   possibles[selector][possible][nums],
+										   [])
+							removeFromPossibles(possibles,
+												possibles[selector][possible][nums],
+												[])
+							break
 
-							# Otherwise we are seeing this pair for the first
-							# time
-							else:
+						# If we have more than one adjacent neighbor, it is
+						# always safe to assume that we are Black (as explained
+						# in great length in the function documentation).
+						# However, we are NOT free to mark anything else.
+						# We will just be lazy and have the next call to this
+						# resolve the remaining parts (much easier).
+						elif adjacentNeighbors > 1:
+							puzzle.markBlack(coords[0], coords[1])
+							removeFromPossibles(possibles, [coords], [])
+							break
+						
+					# Otherwise we are processing this for the first time, and
+					# need to search for adjacent neighbors
+					else:
+
+						# We need to find the first adjacent group
+						if i + 1 < similarNums:
+	
+							# The coordinates are given in ascending order, so we
+							# can assume that the very next coordinate is the next
+							# closest like-number in our group.
+							nextCoords = possibles[selector][possible][nums][i + 1]
+							if (selector == 0 and coords[1] + 1 == nextCoords[1]) \
+							or (selector == 1 and coords[0] + 1 == nextCoords[0]):
+	
+								# Otherwise we are seeing this pair for the first
+								# time
 								puzzle.markAdjacent(coords[0], coords[1])
 								puzzle.markAdjacent(nextCoords[0], nextCoords[1])
-
+	
 								# mark everyone, but this adjacent group, black
 								markTheseBlack(puzzle,
 											   possibles[selector][possible][nums],
 											   [coords, nextCoords])
-
-
-								# Add back the adjacent ones, we only needed to
-								# remove the others
-								possibles[selector][possible][nums].append(coords)
-								possibles[selector][possible][nums].append(nextCoords)
-
+								removeFromPossibles(possibles,
+													possibles[selector][possible][nums],
+													[coords, nextCoords])
+	
 								# We don't need to keep processing the rest of this
 								# group of numbers within this selector since we marked
 								# everything already
@@ -499,12 +594,30 @@ def removeFromPossibles(possibles, removeThese, notThese):
 						nums.remove(element)
 	return possibles
 
+def sum(li):
+	s = 0
+	for l in li:
+		if isinstance(l, list):
+			s += sum(l)
+		elif l:
+			s += 1
+	return s
 
 def MRVSolver(puzzle, possible):
-	if len(possible) == 0:
+	global totalStates
+	if sum(possible) == 0:
 		return
-	remaining = findMostRestricted(puzzle, possible)
-	pass
+	if not puzzle.isValid():
+		return
+	totalStates += 1
+	if notSeen(puzzle):
+		markedSeen(puzzle)
+		MRVSolver(puzzle, findMostRestricted(puzzle, possible, False))
+	# If we have already seen this puzzle before, that implies that we have no
+	# forced moves to make.  Instead, we are free to make a move that
+	# isn't as forced, but that makes the most logical sense
+	else:
+		MRVSolver(puzzle, findMostRestricted(puzzle, possible, True))
 
 """
 	Checks for all tiles that must conform to Rule One (the most
@@ -548,7 +661,14 @@ def smart_solver(puzzle):
 	print("Finding Solution...")
 	if puzzle.isSolved():
 		return True
-	return MRVSolver(puzzle, findAllPossible(puzzle))
+	MRVSolver(puzzle, findAllPossible(puzzle))
+	if puzzle.isSolved():
+		print("Final Solution State")
+		print_puzzle(puzzle)
+		print_states_gen(totalStates)
+	else:
+		print("No Solution")
+
 
 
 def print_puzzle(puzzle):
@@ -557,7 +677,7 @@ def print_puzzle(puzzle):
 	rows = puzzle.getRows()
 	for row in range(0, rows):
 		for col in range(0, rows):
-			if marked[row][col]:
+			if marked[row][col] == puzzle._BLACK:
 				print("B", end="")
 			print(str(board[row][col]), end=" ")
 		print()
@@ -596,13 +716,13 @@ if __name__ == "__main__":
 	), False)
 
 	# Brute-Force Solver
-	solve_hitori(puzzle1, 0)
+#	solve_hitori(puzzle1, 1)
+#	print()
+#	solve_hitori(puzzle2, 1)
+#	print()
+#	solve_hitori(puzzle3, 1)
 	print()
-#	solve_hitori(puzzle2, 0)
-	print()
-#	solve_hitori(puzzle3, 0)
-	print()
-#	solve_hitori(puzzle4, 0)
+	solve_hitori(puzzle4, 1)
 #	cProfile.run('solve_hitori(puzzle4, 0)', 'output.txt')
 #	p = pstats.Stats('output.txt')
 #	p.sort_stats('time')

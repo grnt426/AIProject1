@@ -6,50 +6,62 @@ from solver import markedSeen
 def test_getRows():
 	p = Puzzle( ((2, 1), (1, 1)), True)
 	assert(p.getRows() == 2)
+
 def test_markBlack():
 	p = Puzzle( ((2, 1), (1, 1)), True)
 	p.markBlack(1, 1)
 	assert(p.isBlack(1, 1))
+
 def test_getMarkedNum():
 	p = Puzzle( ((2, 1), (1, 1)), True)
 	assert(p.getNum(0, 0) == 2)
+
 def test_getUnmarkedNum():
 	p = Puzzle( ((2, 1), (1, 1)), True)
 	assert(int(p.getNum(0, 1)) == 1)
+
 def test_conformsToRuleTwoUnmarked():
 	p = Puzzle( ((2, 1), (1, 1)), False)
 	assert(p.conformsToRuleTwo())
+
 def test_conformsToRuleTwoSingleMark():
 	p = Puzzle( ((2, 1), (1, 1)), True)
 	p.markBlack(1, 1)
 	assert(p.conformsToRuleTwo())
+
 def test_conformsToRuleTwoNonAdjacentMarks():
 	p = Puzzle( ((2, 1), (1, 1)), True)
 	p.markBlack(1, 1)
 	p.markBlack(0, 0)
 	assert(p.conformsToRuleTwo())
+
 def test_conformsToRuleTwoVerticallyAdjacentMarks():
 	p = Puzzle( ((2, 1), (1, 1)), True)
 	p.markBlack(1, 1)
 	p.markBlack(0, 1)
 	assert(not p.conformsToRuleTwo())
+
 def test_conformsToRuleTwoHorizontallyAdjacentMarks():
 	p = Puzzle( ((2, 1), (1, 1)), True)
 	p.markBlack(0, 0)
 	p.markBlack(0, 1)
 	assert(not p.conformsToRuleTwo())
+
 def test_conformsToRuleThreeEmpty():
 	p = Puzzle( ((2, 1), (1, 1)), False)
 	assert(p.conformsToRuleThree())
+
 def test_conformsToRuleThreeSingleMarked():
 	p = Puzzle( ((2, 1), (1, 1)), True)
 	p.markBlack(0, 0)
 	assert(p.conformsToRuleThree())
+
 def test_conformsToRuleThreeDiagonallyDivided():
 	p = Puzzle( ((2, 1), (1, 1)), True)
 	p.markBlack(0, 0)
 	p.markBlack(1, 1)
 	assert(not p.conformsToRuleThree())
+
 def test_conformsToRuleThreeIsolatedWhiteTile():
 	p = Puzzle( ((2, 1, 3),
 				 (1, 1, 2),
@@ -58,13 +70,16 @@ def test_conformsToRuleThreeIsolatedWhiteTile():
 	p.markBlack(2, 0)
 	p.markBlack(2, 2)
 	assert(not p.conformsToRuleThree())
+
 def test_conformsToRuleOneNoneMarked():
 	p = Puzzle( ((2, 1), (1, 1)), False)
 	assert(not p.conformsToRuleOne())
+
 def test_conformsToRuleOneMultipleMarked():
 	p = Puzzle( ((2, 1), (1, 1)), False)
 	p.markBlack(1, 1)
 	assert(p.conformsToRuleOne())
+
 def test_SeenList():
 	p = Puzzle( ((2, 1), (1, 1)), False)
 	p2 = Puzzle( ((2, 1), (1, 1)), False)
@@ -73,6 +88,7 @@ def test_SeenList():
 	markedSeen(p)
 	assert(not notSeen(p))
 	assert(not notSeen(p2))
+
 def test_findMostRestricted():
 	b = (
 		(1, 2, 3),
@@ -124,9 +140,9 @@ def test_findMostRestricted():
 					]
 				]
 			]
-	findMostRestricted(p, possibles)
+	possibles = findMostRestricted(p, possibles)
 
-	# The first iteration should just mark bottom-right three as black
+	# The first iteration should just mark bottom-right element as black
 	assert(p.isBlack(2, 2))
 
 	# All other adjacent numbers should be marked as adjacent
@@ -140,6 +156,85 @@ def test_findMostRestricted():
 	# The other two tiles should remain marked White
 	assert(p.isWhite(0, 1))
 	assert(p.isWhite(2, 0))
+
+def test_findMostRestrictedCompleted():
+	b = (
+		(1, 2, 3),
+		(1, 1, 3),
+		(2, 3, 3)
+	)
+	p = Puzzle(b , False)
+	possibles = [
+				[
+					[[], [], []],
+					[
+						[
+							[1, 0],
+							[1, 1]],
+						[],
+						[]
+					],
+					[
+						[],
+						[],
+						[
+							[2, 1],
+							[2, 2]
+						]
+					]
+				],
+				[
+					[
+						[
+							[0, 0],
+							[1, 0]
+						],
+						[],
+						[]
+					],
+					[
+						[],
+						[],
+						[]
+					],
+					[
+						[],
+						[],
+						[
+							[0, 2],
+							[1, 2],
+							[2, 2]
+						]
+					]
+				]
+			]
+	findMostRestricted(p, possibles)
+	findMostRestricted(p, possibles)
+
+	# These should be Black
+	assert(p.isBlack(1, 0))
+	assert(p.isBlack(0, 2))
+
+	# These should be now marked White
+	assert(p.isWhite(0, 0))
+	assert(p.isWhite(1, 2))
+	assert(p.isWhite(2, 1))
+
+	# These should still be adjacent
+	assert(p.isMarkedAdjacent(1, 1))
+
+	# The other three tiles should have remained marked White
+	assert(p.isWhite(0, 1))
+	assert(p.isWhite(2, 0))
+
+	# Solve the puzzle fully
+	findMostRestricted(p, possibles)
+
+	# This should now be marked White
+	assert(p.isWhite(1, 1))
+
+	# Check that the puzzle was solved
+	assert(p.isSolved())
 
 def test_findAllPossible():
 	b = (
@@ -214,4 +309,5 @@ test_conformsToRuleOneNoneMarked()
 test_conformsToRuleOneMultipleMarked()
 test_SeenList()
 test_findMostRestricted()
+test_findMostRestrictedCompleted()
 test_findAllPossible()
